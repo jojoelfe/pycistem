@@ -1,3 +1,5 @@
+from . import cistem_program
+
 from dataclasses import dataclass
 @dataclass
 class ApplyCtfParameters:
@@ -21,3 +23,5 @@ class ApplyCtfParameters:
     wiener_filter_high_pass_radius: float = 200.0
     maintain_image_contrast: bool = False
     
+async def run(parameters: ApplyCtfParameters):
+    await cistem_program.run("applyctf",parameters)

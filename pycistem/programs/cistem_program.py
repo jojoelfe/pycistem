@@ -8,11 +8,15 @@ import logging
 from rich.logging import RichHandler
 import secrets
 import string
+from pathlib import Path
+
+from ..config import config
 
 FORMAT = "%(message)s"
 logging.basicConfig(
     level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
+
 
 from ._cistem_constants import *
 
@@ -119,7 +123,8 @@ async def run(executable,parameters):
 
     logger.info(f'Launching executable')
 
-    cmd = executable
+    cmd = Path(config["CISTEM_PATH"]) / executable
+    cmd = str(cmd)
     cmd += f' {HOST} {PORT} "{identity}" 1'
     
     proc = await asyncio.create_subprocess_shell(
