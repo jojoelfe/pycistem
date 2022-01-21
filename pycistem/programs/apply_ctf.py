@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 @dataclass
 class ApplyCtfParameters:
     input_filename: str

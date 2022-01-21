@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-
 @dataclass
 class RefineTemplateParameters:
     input_search_image: str,

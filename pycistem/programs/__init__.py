@@ -1,2 +1,3 @@
-def hello_program():
-    print("Hello Program")
+from .cistem_program import *
+
+from .apply_ctf import *
