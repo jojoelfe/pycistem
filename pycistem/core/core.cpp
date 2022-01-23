@@ -1,6 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
-#include "../../../src/core/core_headers.h"
+#include "core/core_headers.h"
+
+
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -184,8 +186,8 @@ PYBIND11_MODULE(core, m)
 				float wanted_beam_tilt_x_in_radians, // rad
 				float wanted_beam_tilt_y_in_radians, // rad
 				float wanted_particle_shift_x_in_angstroms, // A
-				float wanted_particle_shift_y_in_angstroms, // A
-				float wanted_thickness_in_nm) {
+				float wanted_particle_shift_y_in_angstroms) // A
+			  {
           CTF ctf = CTF();
           if (wanted_highest_frequency_for_fitting_in_reciprocal_angstroms <= 0.0f) {
             wanted_highest_frequency_for_fitting_in_reciprocal_angstroms = 1.0/(2.0*pixel_size_in_angstroms);
@@ -204,8 +206,7 @@ PYBIND11_MODULE(core, m)
                    wanted_beam_tilt_x_in_radians,
                    wanted_beam_tilt_y_in_radians,
                    wanted_particle_shift_x_in_angstroms,
-                   wanted_particle_shift_y_in_angstroms,
-                   wanted_thickness_in_nm);
+                   wanted_particle_shift_y_in_angstroms);
           return ctf;
         }), py::arg("kV") = 300.0,
             py::arg("cs") = 2.7,
@@ -221,8 +222,7 @@ PYBIND11_MODULE(core, m)
             py::arg("beam_tilt_x") = 0.0,
             py::arg("beam_tilt_y") = 0.0,
             py::arg("particle_shift_x") = 0.0,
-            py::arg("particle_shift_y") = 0.0,
-            py::arg("thickness") = 0.0
+            py::arg("particle_shift_y") = 0.0
             )
       //.def_readonly("thickness", &CTF::thickness)
       //.def(py::init<float,float,float,float,float,float,float,float,float,float,float,float,float,float,float>())
@@ -230,7 +230,6 @@ PYBIND11_MODULE(core, m)
       //.def("Init", (void (CTF::*)(float,float,float,float,float,float,float,float,float,float,float,float,float,float,float,float))&CTF::Init)
       //.def("Init", (void (CTF::*)(float,float,float,float,float,float,float,float,float))&CTF::Init)
       .def("SetDefocus", &CTF::SetDefocus)
-      .def("SetThickness", &CTF::SetThickness)
       .def("SetAdditionalPhaseShift", &CTF::SetAdditionalPhaseShift)
       .def("SetEnvelope", &CTF::SetEnvelope)
       .def("SetBeamTilt", &CTF::SetBeamTilt)
@@ -239,11 +238,7 @@ PYBIND11_MODULE(core, m)
       .def("SetHighestFrequencyWithGoodFit", &CTF::SetHighestFrequencyWithGoodFit)
       .def("EvaluateComplex", &CTF::EvaluateComplex)
       .def("Evaluate", &CTF::Evaluate)
-      .def("xi",&CTF::xi)
-      .def("sinc_xi",&CTF::sinc_xi)
-      .def("sin_xi",&CTF::sin_xi)
       .def("EvaluateWithEnvelope", &CTF::EvaluateWithEnvelope)
-      .def("EvaluateWithThickness", &CTF::EvaluateWithThickness)
       .def("PhaseShiftGivenSquaredSpatialFrequencyAndAzimuth", &CTF::PhaseShiftGivenSquaredSpatialFrequencyAndAzimuth)
       .def("EvaluateBeamTiltPhaseShift", &CTF::EvaluateBeamTiltPhaseShift)
       .def("PhaseShiftGivenBeamTiltAndShift", &CTF::PhaseShiftGivenBeamTiltAndShift)
@@ -257,7 +252,6 @@ PYBIND11_MODULE(core, m)
       .def("GetHighestFrequencyWithGoodFit", &CTF::GetHighestFrequencyWithGoodFit)
       .def("GetAstigmatismTolerance", &CTF::GetAstigmatismTolerance)
       .def("GetAstigmatism", &CTF::GetAstigmatism)
-      .def("GetThickness", &CTF::GetThickness)
       .def("IsAlmostEqualTo", &CTF::IsAlmostEqualTo)
       .def("BeamTiltIsAlmostEqualTo", &CTF::BeamTiltIsAlmostEqualTo)
       .def("EnforceConvention", &CTF::EnforceConvention)
@@ -367,7 +361,6 @@ PYBIND11_MODULE(core, m)
       .def("Logarithm", &Curve::Logarithm)
       .def("ZeroYData", &Curve::ZeroYData)
       .def("ApplyCTF", &Curve::ApplyCTF)
-      .def("ApplyCTFWithThickness", &Curve::ApplyCTFWithThickness)
       .def("SquareRoot", &Curve::SquareRoot)
       .def("Reciprocal", &Curve::Reciprocal)
       .def("MultiplyBy", [](Curve &__inst) {
@@ -1066,7 +1059,6 @@ PYBIND11_MODULE(core, m)
              return std::make_tuple(rotated_image, rotation_angle);
            })
       .def("Rotate2DInPlace", &Image::Rotate2DInPlace)
-      .def("Rotate2DInPlaceBy90Degrees", &Image::Rotate2DInPlaceBy90Degrees)
       .def("Rotate2DSample", [](Image &__inst, float mask_radius_in_pixels)
            {
              ::Image rotated_image;

@@ -2,7 +2,7 @@
 from setuptools import setup
 
 packages = \
-['pycistem', 'pycistem.core']
+['pycistem', 'pycistem.core', 'pycistem.programs']
 
 package_data = \
 {'': ['*']}
@@ -21,7 +21,7 @@ setup_kwargs = {
     'package_data': package_data,
     'python_requires': '>=3.6,<4.0',
 }
-#from build import *
-#build(setup_kwargs)
+from build import *
+build(setup_kwargs)
 
 setup(**setup_kwargs)

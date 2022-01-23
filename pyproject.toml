@@ -3,14 +3,16 @@ name = "pycistem"
 version = "0.1.0"
 description = ""
 authors = ["Johannes Elferich <jojotux123@hotmail.com>"]
-# build = "build.py"
+build = "build.py"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = ">=3.6.2,<4.0"
+rich = "^11.0.0"
 
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+pybind11 = "^2.9.0"
 
 
 [build-system]
