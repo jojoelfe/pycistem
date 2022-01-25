@@ -37,6 +37,9 @@ def _encode_parameters(parameters):
             bb = parameterstuple[i].encode('utf-8')
             buffer += len(bb).to_bytes(4,'little')
             buffer += bb
+        if argument.type == int:
+            buffer += int(2).to_bytes(1,'little')
+            buffer += struct.pack('<i', parameterstuple[i])
     return buffer
 
     
@@ -81,6 +84,7 @@ async def handle_leader(reader, writer, buffer):
         writer.close()
         return
     data = await reader.read(8)
+    logger.info(f"{addr} sent {data} as dummy result")
     writer.write(socket_ready_to_send_single_job)
     writer.write(len(buffer).to_bytes(8,'little'))
     writer.write(buffer)
