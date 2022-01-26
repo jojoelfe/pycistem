@@ -72,7 +72,7 @@ async def handle_manager(reader, writer, identity):
     logger.info("Pointed executable to leader, closing the connection")
     writer.close()
 
-async def handle_leader(reader, writer, buffer):
+async def handle_leader(reader, writer, buffer, signal_handlers,results):
     logger = logging.getLogger("cisTEM Leader")
     addr = writer.get_extra_info('peername')
 
@@ -90,7 +90,11 @@ async def handle_leader(reader, writer, buffer):
     writer.write(buffer)
     await writer.drain()
     data = await reader.read(16)
-    logger.info(f"{addr} sent {data}")
+    result = None
+    if data in signal_handlers:
+        logger.info(f"{addr} sent {data} and I know what to do with it")
+        result = await signal_handlers[data](reader,writer,logger)
+        results.append(result)
     writer.write(socket_time_to_die)
     await writer.drain()
     data = await reader.read(16)
@@ -101,7 +105,8 @@ async def handle_leader(reader, writer, buffer):
     logger.info(f"{addr} sent {data}")
     writer.close()
 
-async def run(executable,parameters):
+async def run(executable,parameters,signal_handlers={}):
+    results = []
     logger = logging.getLogger("cisTEM Program")
     HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
     PORT = 9399        # Port to listen on (non-privileged ports are > 1023)
@@ -120,7 +125,7 @@ async def run(executable,parameters):
     logger.info(f'Serving manager on {addrs}')
 
     server_leader = await asyncio.start_server(
-        lambda r,w : handle_leader(r,w, buffer), HOST, PORT_LEADER)
+        lambda r,w : handle_leader(r,w, buffer,signal_handlers,results), HOST, PORT_LEADER)
 
     addrs = ', '.join(str(sock.getsockname()) for sock in server_leader.sockets)
     logger.info(f'Serving leader on {addrs}')
@@ -140,9 +145,10 @@ async def run(executable,parameters):
 
     logger.info(f'[{cmd!r} exited with {proc.returncode}]')
     if stdout:
-        logger.info(f'[stdout]\n{stdout.decode()}')
+        logger.info(f'[stdout]\n')
     if stderr:
         logger.error(f'[stderr]\n{stderr.decode()}')
+    return(results)
     
     #async with server:
     #    await server.serve_forever()
