@@ -1,1 +1,1 @@
-from .pycistem import *
+from .core import *

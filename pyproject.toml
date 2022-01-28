@@ -6,8 +6,11 @@ authors = ["Johannes Elferich <jojotux123@hotmail.com>"]
 build = "build.py"
 
 [tool.poetry.dependencies]
-python = ">=3.6.2,<4.0"
+python = ">=3.8,<4.0"
 rich = "^11.0.0"
+appdirs = "^1.4.4"
+PyYAML = "^6.0"
+pandas = "^1.4.0"
 
 
 [tool.poetry.dev-dependencies]

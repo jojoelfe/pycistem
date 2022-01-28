@@ -2,7 +2,7 @@
 from setuptools import setup
 
 packages = \
-['pycistem', 'pycistem.core', 'pycistem.programs']
+['pycistem', 'pycistem.core', 'pycistem.programs', 'pycistem.database']
 
 package_data = \
 {'': ['*']}
