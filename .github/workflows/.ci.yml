@@ -57,7 +57,14 @@ jobs:
       run: echo "$HOME/.local/bin" >> $GITHUB_PATH
     - name: Build pycistem
       run: |
+        poetry install
         poetry build
+    - name: Create artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: 'Wheel for Python ${{ matrix.python }}'
+        path: dist/pycistem*.whl
+        
 
 
 
