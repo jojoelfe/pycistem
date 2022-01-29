@@ -30,15 +30,16 @@ jobs:
         fetch-depth: 0
         repository: 'timothygrant80/cisTEM'
         path: 'cisTEM'
-    - name: Get_cistem_sha
+    - name: Get cisTEM sha
+      id: getsha
       run: |
         cd cisTEM
         echo "::set-output name=sha::$(git rev-parse HEAD)"
-    - name: Cache_cisTEM
+    - name: Cache cisTEM
       uses: actions/cache@v2
       id: cache
       with:
-        key: '${{ steps.Get_cistem_sha.outputs.sha }}'
+        key: 'sha_${{ steps.getsha.outputs.sha }}'
         path: 'cisTEM'
     - name: Build cisTEM
       if: steps.cache.outputs.cache-hit != 'true'
