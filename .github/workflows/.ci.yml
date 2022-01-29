@@ -30,7 +30,19 @@ jobs:
         fetch-depth: 0
         repository: 'timothygrant80/cisTEM'
         path: 'cisTEM'
-    - name: Configure cisTEM
+    - name: Get_cistem_sha
+      run: |
+        cd cisTEM
+        echo "::set-output name=sha::$(git rev-parse HEAD)"
+    - name: Cache_cisTEM
+      uses: actions/cache@v2
+      id: cache
+      with:
+        key: '${{ steps.Get_cistem_sha.outputs.sha }}'
+        path: 'cisTEM'
+        id: 'cisTEM'
+    - name: Build cisTEM
+      if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cd cisTEM
         ./regenerate_project.b
@@ -38,7 +50,11 @@ jobs:
         cd build/icpc
         CC=icc CXX=icpc CXXFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
         make -j4
-    - uses: abatilo/actions-poetry@v2.0.0 
+    - name: Bootstrap poetry
+        run: |
+          curl -sL https://install.python-poetry.org | python - -y
+    - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
     - name: Build pycistem
       run: |
         poetry build

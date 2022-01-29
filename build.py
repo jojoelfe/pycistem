@@ -38,7 +38,7 @@ ext_modules = [
         # Example: passing in the version to the compiled code
         define_macros = [('VERSION_INFO', __version__)],
         include_dirs=["cisTEM/src/"],
-        extra_objects = [ "cisTEM/build/icpc/libcore.a"],
+        extra_objects = [ "cisTEM/build/icpc/src/libcore.a"],
         extra_link_args = __WX_LIBS_BASE__.split(' ') 
         ),
 ]
