@@ -33,11 +33,11 @@ jobs:
     - name: Configure cisTEM
       run: |
         cd cisTEM
-        ./regenerate-project.b
+        ./regenerate_project.b
         mkdir -p build/icpc
         cd build/icpc
         CC=icc CXX=icpc CXXFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
-        
+        make -j4
     - uses: abatilo/actions-poetry@v2.0.0 
     - name: Build pycistem
       run: |
