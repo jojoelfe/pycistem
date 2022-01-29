@@ -48,7 +48,7 @@ jobs:
         ./regenerate_project.b
         mkdir -p build/icpc
         cd build/icpc
-        CC=icc CXX=icpc CXXFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
+        CC=icc CXX=icpc CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
         make -j4
     - name: Bootstrap poetry
       run: |
