@@ -40,7 +40,6 @@ jobs:
       with:
         key: '${{ steps.Get_cistem_sha.outputs.sha }}'
         path: 'cisTEM'
-        id: 'cisTEM'
     - name: Build cisTEM
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
