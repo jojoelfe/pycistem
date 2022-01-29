@@ -1,0 +1,47 @@
+name: pycistem CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [3.8,3.9,3.10]
+
+    runs-on: ubuntu-18.04
+    container: jojoelfe/cistem_ci_icpc
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '{{ matrix.python }}'
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        repository: 'timothygrant80/cisTEM'
+        path: 'cisTEM'
+    - name: Configure cisTEM
+      run: |
+        cd cisTEM
+        ./regenerate-project.b
+        mkdir -p build/icpc
+        cd build/icpc
+        CC=icc CXX=icpc CXXFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
+        
+    - uses: abatilo/actions-poetry@v2.0.0 
+    - name: Build pycistem
+      run: |
+        poetry build
+
+
+

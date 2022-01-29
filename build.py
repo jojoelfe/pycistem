@@ -3,14 +3,22 @@ from typing import Any, Dict
 from pybind11.setup_helpers import Pybind11Extension
 from setuptools import setup
 from setuptools.command.build_ext import build_ext
+import subprocess
 
+wxflags = subprocess.run(['wx-config', '--cxxflags'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+# Strip the newline from the wxflags
+wxflags = wxflags.strip()
+
+wxlibflags = subprocess.run(['wx-config', '--libs'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+# Strip the newline from the wxlibflags
+wxlibflags = wxlibflags.strip()
 
 # This code pulls come key compile info out of the config.log file
 __version__ = "0.0.1"
 __compiler__ = "icpc"
-__WX_FLAGS__ = "-I/groups/elferich/wx/wxWidgets-3.0.5/lib/wx/include/gtk2-unicode-static-3.0 -I/groups/elferich/wx/wxWidgets-3.0.5/include -D_FILE_OFFSET_BITS=64 -D__WXGTK__ -DwxUSE_GUI=0"
+__WX_FLAGS__ = wxflags + "  -DwxUSE_GUI=0"
 __CPP_FLAGS__ = "-fPIC -O3 -no-prec-div -no-prec-sqrt -w2 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DEXPERIMENTAL -DMKL -mkl=sequential -fopenmp"
-__WX_LIBS_BASE__ = "-lwxtiff-3.0 -L/groups/elferich/wx/wxWidgets-3.0.5/lib -pthread   /groups/elferich/wx/wxWidgets-3.0.5/lib/libwx_baseu_net-3.0.a /groups/elferich/wx/wxWidgets-3.0.5/lib/libwx_baseu_xml-3.0.a /groups/elferich/wx/wxWidgets-3.0.5/lib/libwx_baseu-3.0.a -lwxregexu-3.0 -lwxexpat-3.0 -lwxtiff-3.0 -lwxjpeg-3.0 -lwxpng-3.0 -lwxzlib-3.0"
+__WX_LIBS_BASE__ = wxlibflags
 
 # Overwrite default compiler flags. It's kind of a hack to add the import flgs to the compiler string, but I think its the only way.
 class custom_build_ext(build_ext):
@@ -29,8 +37,8 @@ ext_modules = [
         ["pycistem/core/core.cpp"],
         # Example: passing in the version to the compiled code
         define_macros = [('VERSION_INFO', __version__)],
-        include_dirs=["../cisTEM/src/"],
-        extra_objects = [ "../libcore.a"],
+        include_dirs=["cisTEM/src/"],
+        extra_objects = [ "cisTEM/build/icpc/libcore.a"],
         extra_link_args = __WX_LIBS_BASE__.split(' ') 
         ),
 ]
