@@ -51,8 +51,8 @@ jobs:
         CC=icc CXX=icpc CXXFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
         make -j4
     - name: Bootstrap poetry
-        run: |
-          curl -sL https://install.python-poetry.org | python - -y
+      run: |
+        curl -sL https://install.python-poetry.org | python - -y
     - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
     - name: Build pycistem
