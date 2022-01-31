@@ -36,6 +36,21 @@ PYBIND11_MODULE(core, m)
       },
       "A function which details an mrc?");
 
+  // Angles and Shifts
+
+   py::class_<AnglesAndShifts> anglesandshifts(m, "AnglesAndShifts");
+    anglesandshifts
+      .def(py::init<>())
+      .def(py::init<float,float,float,float,float>())
+      .def("GenerateEulerMatrices", &AnglesAndShifts::GenerateEulerMatrices)
+      .def("GenerateRotationMatrix2D", &AnglesAndShifts::GenerateRotationMatrix2D)
+      .def("Init", &AnglesAndShifts::Init)
+      .def("ReturnPhiAngle", &AnglesAndShifts::ReturnPhiAngle)
+      .def("ReturnThetaAngle", &AnglesAndShifts::ReturnThetaAngle)
+      .def("ReturnPsiAngle", &AnglesAndShifts::ReturnPsiAngle)
+      .def("ReturnShiftX", &AnglesAndShifts::ReturnShiftX)
+      .def("ReturnShiftY", &AnglesAndShifts::ReturnShiftY);
+
   // Asset classes
 
   py::class_<Asset> asset(m, "Asset");
