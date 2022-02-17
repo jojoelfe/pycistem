@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pickle import FALSE
 from ._cistem_constants import socket_template_match_result_ready
+from typing import Union
 
 from pycistem.programs import cistem_program
 from ..database import get_image_info_from_db, get_tm_info_from_db
@@ -55,7 +56,7 @@ class RefineTemplateParameters:
     read_coordinates: bool = False
 
 async def handle_results(reader, writer, logger):
-    logger.info("Handling results")
+    #logger.info("Handling results")
     data = await reader.read(4)
     number_of_bytes = int.from_bytes(data[0:3], byteorder='little')
     results = await reader.read(number_of_bytes)
@@ -85,8 +86,12 @@ def parameters_from_database(database, image_asset_id, template_match_id, **kwar
                              **kwargs)
     return(par)
 
-def run(parameters: RefineTemplateParameters):
-    byte_result = asyncio.run(cistem_program.run("refine_template", parameters, signal_handlers=signal_handlers))[0]
+def run(parameters: Union[RefineTemplateParameters,list[RefineTemplateParameters]],**kwargs):
+    
+    if not isinstance(parameters, list):
+        parameters = [parameters]
+    
+    byte_result = asyncio.run(cistem_program.run("refine_template", parameters, signal_handlers=signal_handlers,**kwargs))[0]
     image_number = struct.unpack_from('<i',byte_result,offset=0)[0]
     peak_numbers = struct.unpack_from('<i',byte_result,offset=4)[0]
     changes_numbers = struct.unpack_from('<i',byte_result,offset=8)[0]
