@@ -91,26 +91,31 @@ def run(parameters: Union[RefineTemplateParameters,list[RefineTemplateParameters
     if not isinstance(parameters, list):
         parameters = [parameters]
     
-    byte_result = asyncio.run(cistem_program.run("refine_template", parameters, signal_handlers=signal_handlers,**kwargs))[0]
-    image_number = struct.unpack_from('<i',byte_result,offset=0)[0]
-    peak_numbers = struct.unpack_from('<i',byte_result,offset=4)[0]
-    changes_numbers = struct.unpack_from('<i',byte_result,offset=8)[0]
-    threshold = struct.unpack_from('<f',byte_result,offset=12)[0]
+    byte_results = asyncio.run(cistem_program.run("refine_template", parameters, signal_handlers=signal_handlers,**kwargs))
+    #File names of original image file name, 3D template file name, energy, Cs, amp. contrast, phase shift, X, Y position, Euler angles, defocus 1 & 2 & angle, pixel size, CC average, CC STD, SNR, scaled SNR 
+    result_peaks = pd.DataFrame({
+        'image_filename': pd.Series(dtype='object'),
+        'peak_number': pd.Series(dtype='int'),
+        'x': pd.Series(dtype='float'),
+        'y': pd.Series(dtype='float'),
+        'psi': pd.Series(dtype='float'),
+        'theta': pd.Series(dtype='float'),
+        'phi': pd.Series(dtype='float'),
+        'defocus': pd.Series(dtype='float'),
+        'pixel_size': pd.Series(dtype='float'),
+        'peak_value': pd.Series(dtype='float')})
 
-    result_peaks = pd.DataFrame({'peak_number': pd.Series(dtype='int'),
-                                 'x': pd.Series(dtype='float'),
-                                 'y': pd.Series(dtype='float'),
-                                 'psi': pd.Series(dtype='float'),
-                                 'theta': pd.Series(dtype='float'),
-                                 'phi': pd.Series(dtype='float'),
-                                 'defocus': pd.Series(dtype='float'),
-                                 'pixel_size': pd.Series(dtype='float'),
-                                 'peak_value': pd.Series(dtype='float')})
+    for parameter_index,byte_result in byte_results:
+        image_number = struct.unpack_from('<i',byte_result,offset=0)[0]
+        peak_numbers = struct.unpack_from('<i',byte_result,offset=4)[0]
+        changes_numbers = struct.unpack_from('<i',byte_result,offset=8)[0]
+        threshold = struct.unpack_from('<f',byte_result,offset=12)[0]
 
-    for peak_number in range(peak_numbers):
-        (x, y, psi, theta, phi, defocus, pixel_size, peak_height) = struct.unpack_from('<ffffffff',byte_result,offset=16+peak_number*32)
-        a_series = pd.Series([peak_number, x, y, psi, theta, phi, defocus, pixel_size, peak_height], index = result_peaks.columns)
-        result_peaks = result_peaks.append(a_series, ignore_index=True)
+        
+        for peak_number in range(peak_numbers):
+            (x, y, psi, theta, phi, defocus, pixel_size, peak_height) = struct.unpack_from('<ffffffff',byte_result,offset=16+peak_number*32)
+            a_series = pd.Series([parameters[parameter_index].input_search_image, int(peak_number), x, y, psi, theta, phi, defocus, pixel_size, peak_height], index = result_peaks.columns)
+            result_peaks = result_peaks.append(a_series, ignore_index=True)
 
     return(result_peaks)
     

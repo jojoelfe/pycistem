@@ -99,7 +99,7 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
         if data in signal_handlers:
             #logger.info(f"{addr} sent {data} and I know what to do with it")
             result = await signal_handlers[data](reader,writer,logger)
-            results.append(result)
+            results.append((my_parameter_i,result))
         else:
             logger.error(f"{addr} sent {data} and I don't know what to do with it")
         data = await reader.read(16)
