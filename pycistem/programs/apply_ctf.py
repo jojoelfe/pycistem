@@ -2,6 +2,9 @@ from . import cistem_program
 from ..database import get_image_info_from_db
 
 from dataclasses import dataclass
+from typing import Union
+
+import asyncio
 @dataclass
 class ApplyCtfParameters:
     input_filename: str
@@ -38,5 +41,9 @@ def parameters_from_database(database, image_asset_id, output_filename, **kwargs
                              **kwargs)
     return(par)
 
-async def run(parameters: ApplyCtfParameters):
-    await cistem_program.run("applyctf",parameters)
+def run(parameters: Union[ApplyCtfParameters,list[ApplyCtfParameters]]):
+    if not isinstance(parameters, list):
+        parameters = [parameters]
+
+
+    asyncio.run(cistem_program.run("applyctf",parameters))

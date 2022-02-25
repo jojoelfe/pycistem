@@ -11,6 +11,7 @@ rich = "^11.0.0"
 appdirs = "^1.4.4"
 PyYAML = "^6.0"
 pandas = "^1.4.0"
+starfile = "^0.111"
 
 
 [tool.poetry.dev-dependencies]

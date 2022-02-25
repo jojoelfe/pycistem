@@ -21,6 +21,7 @@ logging.basicConfig(
 from ._cistem_constants import *
 
 def _encode_parameters(parameters):
+    # creates a cisTEM compatible buffer from the parameters class
     buffer = b''
     buffer += int(1).to_bytes(4,'little')
     buffer += len(fields(parameters)).to_bytes(4,'little')
@@ -44,6 +45,7 @@ def _encode_parameters(parameters):
 
     
 async def handle_manager(reader, writer, identity):
+    # Handles initial connection from the executable and directs them to the leader
     logger = logging.getLogger("cisTEM Manager")
     addr = writer.get_extra_info('peername')
     #logger.info(f"{addr} connected to manager")
@@ -73,7 +75,7 @@ async def handle_manager(reader, writer, identity):
     writer.close()
 
 async def handle_leader(reader, writer, buffers, signal_handlers,results):
-    
+    # Handles connections from the executable asking for work
     
     logger = logging.getLogger("cisTEM Leader")
     addr = writer.get_extra_info('peername')
@@ -88,8 +90,8 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
     data = await reader.read(8)
     #logger.info(f"{addr} sent {data} as dummy result")
     while len(buffers) > 0:
-        my_parameter_i, buffer = buffers.pop(0)
-        logger.info(f"Working on parameter set {my_parameter_i}")
+        parameter_index, buffer = buffers.pop(0)
+        logger.info(f"Working on parameter set {parameter_index}")
         writer.write(socket_ready_to_send_single_job)
         writer.write(len(buffer).to_bytes(8,'little'))
         writer.write(buffer)
@@ -99,16 +101,17 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
         if data in signal_handlers:
             #logger.info(f"{addr} sent {data} and I know what to do with it")
             result = await signal_handlers[data](reader,writer,logger)
-            results.append((my_parameter_i,result))
+            results.append((parameter_index,result))
         else:
             logger.error(f"{addr} sent {data} and I don't know what to do with it")
+            break
         data = await reader.read(16)
         if data != socket_send_next_job:
             logger.error(f"{addr!r} did not request next job, instead sent {data}")
             break
         data = await reader.read(16)
         #logger.info(f"{addr} sent {data} after requesting next results")
-    logger.info(f"{addr} finished sending time to die")
+    logger.info(f"{addr} finished, sending time to die")
     writer.write(socket_time_to_die)
     await writer.drain()
     data = await reader.read(16)
@@ -119,13 +122,8 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
     #logger.info(f"{addr} sent {data}")
     writer.close()
 
-def exec_program(cmd):
-    logger = logging.getLogger("Launcher")
-    logger.info(f"Launching {cmd}")
-    res = subprocess.run(cmd,shell=True,capture_output=True)
 
-async def run(executable,parameters,signal_handlers={},num_procs=1):
-    loop = asyncio.get_event_loop()
+async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1):
     results = []
     buffers = []
     logger = logging.getLogger("cisTEM Program")
@@ -153,20 +151,10 @@ async def run(executable,parameters,signal_handlers={},num_procs=1):
 
     cmd = Path(config["CISTEM_PATH"]) / executable
     cmd = str(cmd)
-    cmd += f' {HOST} {PORT} "{identity}" 1'
-    #with concurrent.futures.ThreadPoolExecutor(max_workers=num_procs) as executor:
-    #    futures = [
-    #        loop.run_in_executor(executor, exec_program, cmd)
-    #        for task in range(num_procs)
-    #    ]
-    #    logging.info(f"Launched {num_procs} processes")
-    #try:
-    #    results = await asyncio.gather(*futures, return_exceptions=False)
-    #except Exception as ex:
-    #    print("Caught error executing task", ex)
-    #    raise
+    cmd += f' {HOST} {PORT} "{identity}" {num_threads}'
     
-    futures_1 = [
+    
+    launch_futures = [
             await asyncio.create_subprocess_shell(
         cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -174,25 +162,17 @@ async def run(executable,parameters,signal_handlers={},num_procs=1):
             for task in range(num_procs)
         ]
     logging.info(f"Launched {num_procs} processes")
-    #proc = await asyncio.create_subprocess_shell(
-    #    cmd,
-    #    stdout=asyncio.subprocess.PIPE,
-    #    stderr=asyncio.subprocess.PIPE)
-    futures_2 = [
+    
+    result_futures = [
             future.communicate()
-            for future in futures_1
+            for future in launch_futures
         ]
     try:
-        proc_results = await asyncio.gather(*futures_2, return_exceptions=False)
+        proc_results = await asyncio.gather(*result_futures, return_exceptions=False)
     except Exception as ex:
         print("Caught error executing task", ex)
         raise
-    #logger.info(f'[{cmd!r} exited with {proc.returncode}]')
-    #if stdout:
-    #    logger.info(f'[stdout]\n')
-    #if stderr:
-    #    logger.error(f'[stderr]\n{stderr.decode()}')
-    print(len(results))
+    
     return(results)
     
    
