@@ -96,15 +96,20 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
         writer.write(len(buffer).to_bytes(8,'little'))
         writer.write(buffer)
         await writer.drain()
-        data = await reader.read(16)
-        result = None
-        if data in signal_handlers:
-            #logger.info(f"{addr} sent {data} and I know what to do with it")
-            result = await signal_handlers[data](reader,writer,logger)
-            results.append((parameter_index,result))
-        else:
-            logger.error(f"{addr} sent {data} and I don't know what to do with it")
-            break
+        
+        # check length of signal_handlers
+        if len(signal_handlers) > 0:
+            data = await reader.read(16)
+            result = None
+            logger.info(f"Waiting for signal handler")
+            if data in signal_handlers:
+                #logger.info(f"{addr} sent {data} and I know what to do with it")
+                result = await signal_handlers[data](reader,writer,logger)
+                results.append((parameter_index,result))
+            else:
+                logger.error(f"{addr} sent {data} and I don't know what to do with it, really")
+                #logger.error(f"{buffer}")
+                break
         data = await reader.read(16)
         if data != socket_send_next_job:
             logger.error(f"{addr!r} did not request next job, instead sent {data}")
@@ -172,7 +177,6 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
     except Exception as ex:
         print("Caught error executing task", ex)
         raise
-    
     return(results)
     
    

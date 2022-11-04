@@ -1,5 +1,6 @@
 from . import cistem_program
 from ..database import get_image_info_from_db
+from ._cistem_constants import socket_send_next_job
 
 from dataclasses import dataclass
 from typing import Union

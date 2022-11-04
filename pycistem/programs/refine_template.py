@@ -148,10 +148,10 @@ def run(parameters: Union[RefineTemplateParameters,list[RefineTemplateParameters
                 defocus, 
                 pixel_size, 
                 peak_height], index = result_peaks.columns)
-            result_peaks = result_peaks.append(new_peak_series, ignore_index=True)
+            result_peaks.loc[len(result_peaks.index)] = new_peak_series
 
     return(result_peaks)
     
-def write_starfile(results,filename):
+def write_starfile(results,filename, overwrite=True):
     # Write the results dataframe to a star file
-    starfile.write(results, filename=filename)
+    starfile.write(results, filename=filename, overwrite=overwrite)
