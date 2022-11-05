@@ -24,10 +24,17 @@ class RefineTemplateParameters:
     defocus1: float = 10000
     defocus2: float = 10000
     defocus_angle: float = 0.0
+    low_resolution_limit: float = 300.0
+    high_resolution_limit: float = 8.0
+    angular_range: float = 2.0
     angular_step: float = 0.2
+    best_parameters_to_keep: int = 1
     defocus_search_range: float = 200.0
     defocus_search_step: float = 10.0
+    pixel_size_search_range: float = 0.0
+    pixel_size_step: float = 0.0
     padding: float = 1.0
+    ctf_refinement: bool = False
     mask_radius: float = 0.0
     phase_shift: float = 0.0
     mip_input_filename: str = "input_mip.mrc"
@@ -36,17 +43,22 @@ class RefineTemplateParameters:
     best_theta_input_filename: str = "input_theta.mrc"
     best_phi_input_filename: str = "input_phi.mrc"
     best_defocus_input_filename: str = "input_defocus.mrc"
+    best_pixel_size_input_filename: str = "input_pixel_size.mrc"
     best_psi_output_file: str = "/tmp/psi.mrc"
     best_theta_output_file: str = "/tmp/theta.mrc"
     best_phi_output_file: str = "/tmp/phi.mrc"
     best_defocus_output_file: str = "/tmp/defocus.mrc"
+    best_pixel_size_output_file: str = "/tmp/pixel_size.mrc"
     mip_output_file: str = "/tmp/mip.mrc"
     scaled_mip_output_file: str = "/tmp/scaled_mip.mrc"
     wanted_threshold: float = 7.5
     min_peak_radius: float = 10.0
     xy_change_threshold: float = 10.0
     exclude_above_xy_threshold: bool = False
+    symmetry: str = "C1"
     in_plane_angular_step: float = 0.1
+    first_search_position: int = 0
+    last_search_position: int = 0
     image_number_for_gui: int = 0
     number_of_jobs_per_image_in_gui: int = 0
     result_number: int = 1
@@ -54,8 +66,7 @@ class RefineTemplateParameters:
     directory_for_results: str = "/tmp"
     threshold_for_result_plotting: float = 8.0
     filename_for_gui_result_image: str = "/tmp/gui_result.mrc"
-    xyz_coords_filename: str ="/tmp/test.txt"
-    read_coordinates: bool = False
+
 
 async def handle_results(reader, writer, logger):
     #logger.info("Handling results")
@@ -86,6 +97,7 @@ def parameters_from_database(database, image_asset_id, template_match_id, **kwar
                              mip_input_filename=tm_info['MIP_OUTPUT_FILE'],
                              scaled_mip_input_filename=tm_info['SCALED_MIP_OUTPUT_FILE'],
                              best_defocus_input_filename=tm_info['DEFOCUS_OUTPUT_FILE'],
+                             best_pixel_size_input_filename=tm_info['PIXEL_SIZE_OUTPUT_FILE'],
                              best_psi_input_filename=tm_info['PSI_OUTPUT_FILE'],
                              best_theta_input_filename=tm_info['THETA_OUTPUT_FILE'],
                              best_phi_input_filename=tm_info['PHI_OUTPUT_FILE'],
@@ -96,7 +108,6 @@ def run(parameters: Union[RefineTemplateParameters,list[RefineTemplateParameters
     
     if not isinstance(parameters, list):
         parameters = [parameters]
-    
     byte_results = asyncio.run(cistem_program.run("refine_template", parameters, signal_handlers=signal_handlers,**kwargs))
     #File names of original image file name, 3D template file name, energy, Cs, amp. contrast, phase shift, X, Y position, Euler angles, defocus 1 & 2 & angle, pixel size, CC average, CC STD, SNR, scaled SNR 
     result_peaks = pd.DataFrame({

@@ -88,7 +88,7 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
         writer.close()
         return
     data = await reader.read(8)
-    #logger.info(f"{addr} sent {data} as dummy result")
+    logger.info(f"{addr} sent {data} as dummy result")
     while len(buffers) > 0:
         parameter_index, buffer = buffers.pop(0)
         logger.info(f"Working on parameter set {parameter_index}")
@@ -177,6 +177,7 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
     except Exception as ex:
         print("Caught error executing task", ex)
         raise
+    server_manager.close()
     return(results)
     
    

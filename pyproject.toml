@@ -3,7 +3,6 @@ name = "pycistem"
 version = "0.1.0"
 description = ""
 authors = ["Johannes Elferich <jojotux123@hotmail.com>"]
-build = "build.py"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
