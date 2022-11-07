@@ -423,8 +423,10 @@ PYBIND11_MODULE(core, m)
              int imported_integer_version;
              double total_cpu_hours;
              int total_jobs_run;
-             auto __ret = __inst.GetMasterSettings(project_directory, project_name, imported_integer_version, total_cpu_hours, total_jobs_run);
-             return std::make_tuple(__ret, project_directory, project_name, imported_integer_version, total_cpu_hours, total_jobs_run);
+             wxString cistem_version_text;
+             cistem::workflow::Enum workflow;
+             auto __ret = __inst.GetMasterSettings(project_directory, project_name, imported_integer_version, total_cpu_hours, total_jobs_run, cistem_version_text, workflow);
+             return std::make_tuple(__ret, project_directory, project_name, imported_integer_version, total_cpu_hours, total_jobs_run, cistem_version_text, workflow);
            })
       .def("SetProjectStatistics", [](Database &__inst)
            {
@@ -564,41 +566,27 @@ PYBIND11_MODULE(core, m)
       .def("AddNextParticlePositionAsset", &Database::AddNextParticlePositionAsset)
       .def("EndParticlePositionAssetInsert", &Database::EndParticlePositionAssetInsert)
       .def("CreateProcessLockTable", &Database::CreateProcessLockTable)
-      .def("CreateParticlePickingListTable", &Database::CreateParticlePickingListTable)
-      .def("CreateParticlePositionAssetTable", &Database::CreateParticlePositionAssetTable)
-      .def("CreateParticlePositionGroupListTable", &Database::CreateParticlePositionGroupListTable)
       .def("CreateParticlePickingResultsTable", [](Database &__inst)
            {
              int picking_job_id;
              auto __ret = __inst.CreateParticlePickingResultsTable(picking_job_id);
              return std::make_tuple(__ret, picking_job_id);
            })
-      .def("CreateImageAssetTable", &Database::CreateImageAssetTable)
-      .def("CreateMovieAssetTable", &Database::CreateMovieAssetTable)
-      .def("CreateVolumeAssetTable", &Database::CreateVolumeAssetTable)
-      .def("CreateVolumeGroupListTable", &Database::CreateVolumeGroupListTable)
-      .def("CreateRefinementPackageAssetTable", &Database::CreateRefinementPackageAssetTable)
       .def("CreateRefinementPackageContainedParticlesTable", &Database::CreateRefinementPackageContainedParticlesTable)
       .def("CreateRefinementPackageCurrent3DReferencesTable", &Database::CreateRefinementPackageCurrent3DReferencesTable)
       .def("CreateRefinementPackageRefinementsList", &Database::CreateRefinementPackageRefinementsList)
       .def("CreateRefinementPackageClassificationsList", &Database::CreateRefinementPackageClassificationsList)
-      .def("CreateRefinementListTable", &Database::CreateRefinementListTable)
       .def("CreateRefinementDetailsTable", &Database::CreateRefinementDetailsTable)
-      .def("CreateTemplateMatchingResultsTable", &Database::CreateTemplateMatchingResultsTable)
       .def("CreateTemplateMatchPeakListTable", &Database::CreateTemplateMatchPeakListTable)
       .def("CreateTemplateMatchPeakChangeListTable", &Database::CreateTemplateMatchPeakChangeListTable)
       .def("CreateRefinementResultTable", &Database::CreateRefinementResultTable)
       .def("CreateRefinementResolutionStatisticsTable", &Database::CreateRefinementResolutionStatisticsTable)
       .def("CreateRefinementAngularDistributionTable", &Database::CreateRefinementAngularDistributionTable)
-      .def("CreateClassificationListTable", &Database::CreateClassificationListTable)
       .def("CreateClassificationResultTable", &Database::CreateClassificationResultTable)
-      .def("CreateClassificationSelectionListTable", &Database::CreateClassificationSelectionListTable)
       .def("CreateClassificationSelectionTable", &Database::CreateClassificationSelectionTable)
       .def("CreateMovieImportDefaultsTable", &Database::CreateMovieImportDefaultsTable)
       .def("CreateImageImportDefaultsTable", &Database::CreateImageImportDefaultsTable)
-      .def("CreateStartupListTable", &Database::CreateStartupListTable)
       .def("CreateStartupResultTable", &Database::CreateStartupResultTable)
-      .def("CreateReconstructionListTable", &Database::CreateReconstructionListTable)
       .def("DoVacuum", &Database::DoVacuum)
       .def("BeginAllMovieAssetsSelect", &Database::BeginAllMovieAssetsSelect)
       .def("GetNextMovieAsset", &Database::GetNextMovieAsset)

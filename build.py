@@ -5,18 +5,18 @@ from setuptools import setup
 from setuptools.command.build_ext import build_ext
 import subprocess
 
-wxflags = subprocess.run(['wx-config', '--cxxflags'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+wxflags = subprocess.run(['/opt/WX/intel-static/bin/wx-config', '--cxxflags'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 # Strip the newline from the wxflags
 wxflags = wxflags.strip()
 
-wxlibflags = subprocess.run(['wx-config', '--libs'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+wxlibflags = subprocess.run(['/opt/WX/intel-static/bin/wx-config', '--libs'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 # Strip the newline from the wxlibflags
 wxlibflags = wxlibflags.strip()
 
 # This code pulls come key compile info out of the config.log file
 __version__ = "0.0.1"
 __compiler__ = "icpc"
-__WX_FLAGS__ = wxflags + "  -DwxUSE_GUI=0"
+__WX_FLAGS__ = wxflags + "  -DwxUSE_GUI=0 -I/workspaces/pycistem/cisTEM/build/icpc"
 __CPP_FLAGS__ = "-fPIC -O3 -no-prec-div -no-prec-sqrt -w2 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DEXPERIMENTAL -DMKL -mkl=sequential -fopenmp"
 __WX_LIBS_BASE__ = wxlibflags
 
