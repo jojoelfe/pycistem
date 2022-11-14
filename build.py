@@ -34,7 +34,9 @@ class custom_build_ext(build_ext):
 
 ext_modules = [
     Pybind11Extension("pycistem/core/core",
-        ["pycistem/core/core.cpp"],
+        ["pycistem/core/core.cpp",
+         "pycistem/core/database.cpp",
+         "pycistem/core/run_profiles.cpp",],
         # Example: passing in the version to the compiled code
         define_macros = [('VERSION_INFO', __version__)],
         include_dirs=["cisTEM/src/"],
