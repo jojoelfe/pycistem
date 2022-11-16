@@ -60,8 +60,12 @@ void init_run_profiles(py::module &m) {
     
     py::class_<RunProfile> runprofile(m, "RunProfile");
     runprofile
-      .def(py::init<>())
-      .def(py::init<::RunProfile>())
+      .def(py::init<>([]() {
+        RunProfile *runprofile = new RunProfile();
+        py::print("RunProfile constructor called");
+        py::print(py::str(runprofile->manager_command.ToStdString()));
+        return runprofile;
+      }))
       .def("AddCommand", (void (RunProfile::*)(::RunCommand))&RunProfile::AddCommand)
       .def("AddCommand", (void (RunProfile::*)(wxString,int,int,bool,int,int))&RunProfile::AddCommand)
       .def("RemoveCommand", &RunProfile::RemoveCommand)
@@ -69,10 +73,12 @@ void init_run_profiles(py::module &m) {
       .def("ReturnTotalJobs", &RunProfile::ReturnTotalJobs)
       .def("SubstituteExecutableName", &RunProfile::SubstituteExecutableName)      
       .def("CheckNumberAndGrow", &RunProfile::CheckNumberAndGrow)
-      //.def_readwrite("name", &RunProfile::name)
+      .def_property("name",
+        [](const RunProfile &m) { return py::str(m.name.ToStdString()); },
+        [](RunProfile &m, wxString name) { m.name = name; })
       .def_property("manager_command", 
-        [](RunProfile &m) { return m.manager_command; }, 
-        [](RunProfile &m, wxString &s) { py::print( py::str(s.ToStdString()));m.manager_command = s; });
+        [](RunProfile &m) { return py::str(m.manager_command.ToStdString()); }, 
+        [](RunProfile &m, wxString &s) { m.manager_command = s; });
     
     py::class_<RunProfileManager> runprofilemanager(m, "RunProfileManager");
     runprofilemanager
