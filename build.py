@@ -4,12 +4,21 @@ from pybind11.setup_helpers import Pybind11Extension
 from setuptools import setup
 from setuptools.command.build_ext import build_ext
 import subprocess
+import os
 
-wxflags = subprocess.run(['/opt/WX/intel-static/bin/wx-config', '--cxxflags'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+# CHeck if /opt/WX/intel-static/bin/wx-config exists
+# If it does, use it to build the extension
+# If it doesn't, use the system wx-config
+if os.path.exists("/opt/WX/intel-static/bin/wx-config"):
+    wx_config = "/opt/WX/intel-static/bin/wx-config"
+else:
+    wx_config = "wx-config"
+
+wxflags = subprocess.run([wx_config, '--cxxflags'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 # Strip the newline from the wxflags
 wxflags = wxflags.strip()
 
-wxlibflags = subprocess.run(['/opt/WX/intel-static/bin/wx-config', '--libs'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+wxlibflags = subprocess.run([wx_config, '--libs'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 # Strip the newline from the wxlibflags
 wxlibflags = wxlibflags.strip()
 
