@@ -23,7 +23,7 @@ wxlibflags = subprocess.run([wx_config, '--libs'], stdout=subprocess.PIPE).stdou
 wxlibflags = wxlibflags.strip()
 
 # This code pulls come key compile info out of the config.log file
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 __compiler__ = "icpc"
 __WX_FLAGS__ = wxflags + "  -DwxUSE_GUI=0 -IcisTEM/build/icpc"
 __CPP_FLAGS__ = "-fPIC -O3 -no-prec-div -no-prec-sqrt -w2 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DEXPERIMENTAL -DMKL -mkl=sequential -fopenmp"

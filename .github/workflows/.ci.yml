@@ -65,11 +65,11 @@ jobs:
         name: 'Wheel for Python ${{ matrix.python }}'
         path: dist/pycistem*.whl
     - name: Publish
-        if: contains(github.ref, 'tags')
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          poetry publish
+      if: contains(github.ref, 'tags')
+      env:
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+      run: |
+        poetry publish
         
 
 
