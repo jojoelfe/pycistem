@@ -1,22 +1,18 @@
 from pycistem.core import *
 
 hosts= [
-    "prague",
-    "helsinki",
-    "budapest",
-    "palermo",
-    "istanbul",
-    "kyiv",
-    "bucharest",
-    "warsaw",
-    "barcelona",
-    "milano",
-    "manchester",
-    "sofia"
+    "host1",
+    "host2",
+    "host3",
+    "host4",
+    "host5",
+    "host6",
+    "host7",
+    "host8",
 ]
 
-manager_command = "/groups/cryoadmin/software/CISTEM/2.0.0-alpha-70-d11eb1e/$command"
-program_command = "/groups/elferich/cistem_binaries/$command"
+manager_command = "/software/CISTEM/$command"
+program_command = "/software/CISTEM/$command"
 num_threads =2 
 delay=100
 rpm = RunProfileManager()
@@ -93,4 +89,4 @@ for host in hosts[8:]:
         rp.AddCommand(f'ssh -f {host} "unset CUDA_VISIBLE_DEVICES && export CUDA_VISIBLE_DEVICES={igpu} && {program_command}"',1,num_threads,False,0,delay)
 rpm.AddProfile(rp)
 
-rpm.WriteRunProfilesToDisk("/tmp/rr.txt",[0,1,2,3,4,5,6,7])
+rpm.WriteRunProfilesToDisk("/tmp/rp.txt",[0,1,2,3,4,5,6,7])
