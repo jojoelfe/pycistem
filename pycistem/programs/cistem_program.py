@@ -178,6 +178,7 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
         print("Caught error executing task", ex)
         raise
     server_manager.close()
+    server_leader.close()
     return(results)
     
    

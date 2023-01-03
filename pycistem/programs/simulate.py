@@ -1,15 +1,19 @@
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor 
 from subprocess import Popen, PIPE
+from dataclasses import dataclass
+from typing import Union
+from ..config import config
+
 
 @dataclass
-class RefineTemplateParameters:
+class SimulateParameters:
     output_filename: str = "out.mrc"
     make_3d: str = "yes"
     output_size: int = 320
     n_threads: int = 1
     input_pdb_file: str = "input.pdb"
-    para1: str = "yes"
+    para1: str = "no"
     pixel_size: float = 1.0
     linear_scaling_of_PDB_bfactors: float = 1.0
     per_atom_bfactor: float = 4.0
@@ -36,19 +40,22 @@ class RefineTemplateParameters:
     para17: float = 0.0
     para18: float = 0.0
 
-def run(parameters: Union[RefineTemplateParameters,list[RefineTemplateParameters]],num_procs:int=1):
-    if isinstance(parameters,RefineTemplateParameters):
+def run(parameters: Union[SimulateParameters,list[SimulateParameters]],num_procs:int=1):
+    if isinstance(parameters,SimulateParameters):
         parameters = [parameters]
     for p in parameters:
-        assert isinstance(p,RefineTemplateParameters)
+        assert isinstance(p,SimulateParameters)
 
-    cmd = Path(config["CISTEM_PATH"]) / executable
+    cmd = Path(config["CISTEM_PATH"]) / "simulate"
     cmd = str(cmd) + " --only-modify-signal-3d=2 --wgt=0.225 --water-shell-only"
 
     # Execute cmd in parallel for each parameter set
     def _run(p):
-        
+        proc = Popen(cmd, shell=True, stdin=PIPE)
+        proc.communicate(input=str.encode('\n'.join(map(str,list(p.__dict__.values())))))
+
     executor = ThreadPoolExecutor(max_workers=10)
     for p in parameters:
         a = executor.submit(_run,p)
+    executor.shutdown(wait=True)
     
