@@ -6,7 +6,7 @@ socket_send_job_details  = b"gr<V>ThBp6w9fzLg"
 socket_sending_job_package  = b"'8ujA!Lup%PR*!hG"
 socket_you_are_the_master  = b"eVmYc.3!g}}cZZs"
 socket_you_are_a_worker  = b"U6u*:z6}W+7nV2g'"
-socket_send_next_job  = b'\x07PnJh=x;[b#f/6L\x00'
+socket_send_next_job  = b'z7PnJh=x;[b#f/6L'
 socket_time_to_die  = b")[czL7$#Sg/d4-*K"
 socket_ready_to_send_single_job  = b"-TDv(X*kY.:d`D5:"
 socket_i_have_an_error  = b"8TU.cDc3jr,rb[SN"
