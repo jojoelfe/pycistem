@@ -1,10 +1,13 @@
 from typing import Any, Dict
 # Available at setup time due to pyproject.toml
 from pybind11.setup_helpers import Pybind11Extension
-from setuptools import setup
+from setuptools import setup, Distribution
 from setuptools.command.build_ext import build_ext
 import subprocess
 import os
+from hatchling.builders.hooks.plugin.interface import BuildHookInterface
+from setuptools.command.build_py import build_py as _build_py   
+import sys 
 
 # CHeck if /opt/WX/intel-static/bin/wx-config exists
 # If it does, use it to build the extension
@@ -26,7 +29,7 @@ wxlibflags = wxlibflags.strip()
 __version__ = "0.1.4"
 __compiler__ = "icpc"
 __WX_FLAGS__ = wxflags + "  -DwxUSE_GUI=0 -IcisTEM/build/icpc"
-__CPP_FLAGS__ = "-fPIC -O3 -no-prec-div -no-prec-sqrt -w2 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DEXPERIMENTAL -DMKL -mkl=sequential -fopenmp"
+__CPP_FLAGS__ = "-fPIC -O3 -no-prec-div -no-prec-sqrt -w2 -D_FILE_OFFSET_BITS=64 -std=c++17 -D_LARGEFILE_SOURCE -DEXPERIMENTAL -DMKL -mkl=sequential -fopenmp"
 __WX_LIBS_BASE__ = wxlibflags
 
 # Overwrite default compiler flags. It's kind of a hack to add the import flgs to the compiler string, but I think its the only way.
@@ -38,7 +41,7 @@ class custom_build_ext(build_ext):
         # distutils.sysconfig.get_var("CFLAGS").
         self.compiler.set_executable("compiler_so", __compiler__ + " " + __WX_FLAGS__ + " " + __CPP_FLAGS__ )
         self.compiler.set_executable("compiler_cxx", __compiler__ + " -fPIC " + __WX_FLAGS__ + " " + __CPP_FLAGS__)
-        self.compiler.set_executable("linker_so", __compiler__  + " " + __CPP_FLAGS__ +" -shared -static-intel -qopenmp-link=static -wd10237 ")
+        self.compiler.set_executable("linker_so", __compiler__  + " " + __CPP_FLAGS__ +" -shared -static-intel -qopenmp-link=static -wd10237 -lffi")
         build_ext.build_extensions(self)
 
 ext_modules = [
@@ -59,6 +62,22 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
         {
             "ext_modules": ext_modules,
             "cmdclass": dict(build_ext=custom_build_ext),
-            "zip_safe": False,
+            "zip_safe": False
         }
     )
+
+class CustomBuildHook(BuildHookInterface):
+    def initialize(self, version, build_data):
+        t = {"packages": ["pycistem"]}
+        build(t)
+        d = setup(**t,script_args=["build_ext"])
+        ext_path = d.get_command_obj("build_ext").get_ext_fullpath("pycistem.core.core")
+        build_data['pure_python'] = False
+        build_data['force_include'][ext_path] = 'pycistem/core/core.so'
+
+if __name__ == "__main__":
+    t = {"packages": ["pycistem"]}
+    build(t)
+    print(t)
+    #sys.argv.append("build_ext")
+    d = setup(**t,script_args=["build_ext"])

@@ -1,1 +1,0 @@
-File names of original image file name, 3D template file name, energy, Cs, amp. contrast, phase shift, X, Y position, Euler angles, defocus 1 & 2 & angle, pixel size, CC average, CC STD, SNR, scaled SNR 
