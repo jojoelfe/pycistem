@@ -88,7 +88,7 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
         writer.close()
         return
     data = await reader.read(8)
-    #logger.info(f"{addr} sent {data} as dummy result")
+    logger.info(f"{addr} sent {data} as dummy result")
     while len(buffers) > 0:
         parameter_index, buffer = buffers.pop(0)
         logger.info(f"Working on parameter set {parameter_index}")
@@ -110,12 +110,13 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
                 logger.error(f"{addr} sent {data} and I don't know what to do with it, really")
                 #logger.error(f"{buffer}")
                 break
-        data = await reader.read(16)
-        if data != socket_send_next_job:
-            logger.error(f"{addr!r} did not request next job, instead sent {data}")
-            break
-        data = await reader.read(16)
-        #logger.info(f"{addr} sent {data} after requesting next results")
+        if socket_send_next_job not in signal_handlers:
+            data = await reader.read(16)
+            if data != socket_send_next_job:
+                logger.error(f"{addr!r} did not request next job, instead sent {data}")
+                break
+            data = await reader.read(16)
+            #logger.info(f"{addr} sent {data} after requesting next results")
     logger.info(f"{addr} finished, sending time to die")
     writer.write(socket_time_to_die)
     await writer.drain()
