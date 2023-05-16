@@ -1,4 +1,6 @@
-import pycistem, asyncio
+import asyncio
+
+import pycistem
 
 lamella = [
     (98, "fff_lamella1.mrc"),

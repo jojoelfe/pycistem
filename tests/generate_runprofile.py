@@ -13,7 +13,7 @@ hosts= [
 
 manager_command = "/software/CISTEM/$command"
 program_command = "/software/CISTEM/$command"
-num_threads =2 
+num_threads =2
 delay=100
 rpm = RunProfileManager()
 # 96 GPus

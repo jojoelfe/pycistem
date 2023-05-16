@@ -1,5 +1,4 @@
-from .cistem_program import *
-
-from .apply_ctf import *
-from .refine_template import *
-from .refine_template_niko import *
+from pycistem.programs.apply_ctf import *
+from pycistem.programs.cistem_program import *
+from pycistem.programs.refine_template import *
+from pycistem.programs.refine_template_niko import *

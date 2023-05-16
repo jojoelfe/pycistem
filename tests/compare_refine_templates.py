@@ -1,8 +1,8 @@
-import pycistem
 import numpy as np
 from rich import print
 from rich_tools import df_to_table
 
+import pycistem
 
 image_ass_id = 185
 pycistem.set_cistem_path("/groups/grigorieffn/workspace/cisTEM/build/src/")

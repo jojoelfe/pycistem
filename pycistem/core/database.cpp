@@ -396,6 +396,12 @@ void init_database(py::module &m) {
       .def("GetRefinementByID", &Database::GetRefinementByID)
       .def("AddClassification", &Database::AddClassification)
       .def("GetClassificationByID", &Database::GetClassificationByID)
+      .def("CheckandUpdateSchema", [](Database& db) {
+          auto [missing_tables, missing_columns] = db.CheckSchema();
+          db.UpdateSchema(missing_columns);
+          db.UpdateVersion();
+      })
+      
       .def("AddClassificationSelection", &Database::AddClassificationSelection);
 
 }

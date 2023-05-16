@@ -1,5 +1,6 @@
-from pycistem.programs._cistem_constants import *
 import socket
+
+from pycistem.programs._cistem_constants import *
 
 # Connect to localhost on port 3000
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -1,16 +1,28 @@
-import struct
-from dataclasses import astuple, fields
-import socket
-import time
-import subprocess
 import asyncio
 import logging
-from rich.logging import RichHandler
 import secrets
+import socket
 import string
+import struct
+import subprocess
+import time
+from dataclasses import astuple, fields
 from pathlib import Path
+from time import sleep
 
-from ..config import config
+import psutil
+from rich.logging import RichHandler
+
+
+def get_ip_addresses(family):
+    for interface, snics in psutil.net_if_addrs().items():
+        for snic in snics:
+            if snic.family == family:
+                yield (interface, snic.address)
+
+HOST = ",".join([a[1] for a in get_ip_addresses(socket.AF_INET)])
+
+from pycistem.config import config
 
 FORMAT = "%(message)s"
 logging.basicConfig(
@@ -18,36 +30,37 @@ logging.basicConfig(
 )
 
 
-from ._cistem_constants import *
+from pycistem.programs._cistem_constants import *
+
 
 def _encode_parameters(parameters):
     # creates a cisTEM compatible buffer from the parameters class
-    buffer = b''
-    buffer += int(1).to_bytes(4,'little')
-    buffer += len(fields(parameters)).to_bytes(4,'little')
+    buffer = b""
+    buffer += int(1).to_bytes(4,"little")
+    buffer += len(fields(parameters)).to_bytes(4,"little")
     parameterstuple = astuple(parameters)
     for i,argument in enumerate(fields(parameters)):
         if argument.type == float:
-            buffer += int(3).to_bytes(1,'little')
-            buffer += struct.pack('<f', parameterstuple[i])
+            buffer += int(3).to_bytes(1,"little")
+            buffer += struct.pack("<f", parameterstuple[i])
         if argument.type == bool:
-            buffer += int(4).to_bytes(1,'little')
-            buffer += parameterstuple[i].to_bytes(1,'little')
+            buffer += int(4).to_bytes(1,"little")
+            buffer += parameterstuple[i].to_bytes(1,"little")
         if argument.type == str:
-            buffer += int(1).to_bytes(1,'little')
-            bb = parameterstuple[i].encode('utf-8')
-            buffer += len(bb).to_bytes(4,'little')
+            buffer += int(1).to_bytes(1,"little")
+            bb = parameterstuple[i].encode("utf-8")
+            buffer += len(bb).to_bytes(4,"little")
             buffer += bb
         if argument.type == int:
-            buffer += int(2).to_bytes(1,'little')
-            buffer += struct.pack('<i', parameterstuple[i])
+            buffer += int(2).to_bytes(1,"little")
+            buffer += struct.pack("<i", parameterstuple[i])
     return buffer
 
-    
+
 async def handle_manager(reader, writer, identity):
     # Handles initial connection from the executable and directs them to the leader
     logger = logging.getLogger("cisTEM Manager")
-    addr = writer.get_extra_info('peername')
+    addr = writer.get_extra_info("peername")
     #logger.info(f"{addr} connected to manager")
     writer.write(socket_please_identify)
     await writer.drain()
@@ -63,11 +76,11 @@ async def handle_manager(reader, writer, identity):
         writer.close()
         return
     writer.write(socket_you_are_a_worker)
-    host = "localhost".encode('utf-8')
-    writer.write(len(host).to_bytes(4,'little'))
+    host = HOST.encode("utf-8")
+    writer.write(len(host).to_bytes(4,"little"))
     writer.write(host)
-    port = "9397".encode('utf-8')
-    writer.write(len(port).to_bytes(4,'little'))
+    port = b"9497"
+    writer.write(len(port).to_bytes(4,"little"))
     writer.write(port)
     await writer.drain()
     time.sleep(1)
@@ -76,10 +89,10 @@ async def handle_manager(reader, writer, identity):
 
 async def handle_leader(reader, writer, buffers, signal_handlers,results):
     # Handles connections from the executable asking for work
-    
+
     logger = logging.getLogger("cisTEM Leader")
-    addr = writer.get_extra_info('peername')
-    
+    addr = writer.get_extra_info("peername")
+
     writer.write(socket_you_are_connected)
     await writer.drain()
     data = await reader.read(16)
@@ -93,15 +106,15 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
         parameter_index, buffer = buffers.pop(0)
         logger.info(f"Working on parameter set {parameter_index}")
         writer.write(socket_ready_to_send_single_job)
-        writer.write(len(buffer).to_bytes(8,'little'))
+        writer.write(len(buffer).to_bytes(8,"little"))
         writer.write(buffer)
         await writer.drain()
-        
+
         # check length of signal_handlers
         if len(signal_handlers) > 0:
             data = await reader.read(16)
             result = None
-            logger.info(f"Waiting for signal handler")
+            logger.info("Waiting for signal handler")
             if data in signal_handlers:
                 #logger.info(f"{addr} sent {data} and I know what to do with it")
                 result = await signal_handlers[data](reader,writer,logger)
@@ -133,42 +146,53 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
     results = []
     buffers = []
     logger = logging.getLogger("cisTEM Program")
-    HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
-    PORT = 9399        # Port to listen on (non-privileged ports are > 1023)
-    PORT_LEADER = 9397
+    # Set HOST to curretn ip address
+    #'127.0.0.1'  # Standard loopback interface address (localhost)
+    PORT = 9499        # Port to listen on (non-privileged ports are > 1023)
+    PORT_LEADER = 9497
 
     alphabet = string.ascii_letters + string.digits
-    identity = ''.join(secrets.choice(alphabet) for i in range(16))
+    identity = "".join(secrets.choice(alphabet) for i in range(16))
     buffers = [(i,_encode_parameters(parameter)) for i, parameter in enumerate(parameters)]
 
     logger.info(f"Secret is {identity}")
 
     server_manager = await asyncio.start_server(
-        lambda r,w : handle_manager(r,w,identity), HOST, PORT)
+        lambda r,w : handle_manager(r,w,identity), "", PORT)
 
-    addrs = ', '.join(str(sock.getsockname()) for sock in server_manager.sockets)
-    logger.info(f'Serving manager on {addrs}')
+    addrs = ", ".join(str(sock.getsockname()) for sock in server_manager.sockets)
+    logger.info(f"Serving manager on {addrs}")
 
     server_leader = await asyncio.start_server(
-        lambda r,w : handle_leader(r,w, buffers,signal_handlers,results), HOST, PORT_LEADER)
+        lambda r,w : handle_leader(r,w, buffers,signal_handlers,results), "", PORT_LEADER)
 
-    addrs = ', '.join(str(sock.getsockname()) for sock in server_leader.sockets)
-    logger.info(f'Serving leader on {addrs}')
+    addrs = ", ".join(str(sock.getsockname()) for sock in server_leader.sockets)
+    logger.info(f"Serving leader on {addrs}")
 
     cmd = Path(config["CISTEM_PATH"]) / executable
-    cmd = str(cmd)
-    cmd += f' {HOST} {PORT} "{identity}" {num_threads}'
-    
-    
-    launch_futures = [
-            await asyncio.create_subprocess_shell(
-        cmd,
+    cmd = 'ssh -f erice "'+str(cmd)
+    cmd += f' {HOST} {PORT} {identity} {num_threads}"'
+    print(cmd)
+
+    launch_futures = []
+    if type(num_procs) == int:
+        tasks = [cmd for i in range(num_procs)]
+    elif type(num_procs) == RunProfile:
+        tasks = []
+        num_procs.SubstituteExecutableName(executable)
+        for rc in num_procs.run_commands:
+            for _i in range(rc.number_of_copies):
+                tasks.append(rc.command_to_run)
+
+    for task in tasks:
+        launch_futures.append(await asyncio.create_subprocess_shell(
+        task,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
-            for task in range(num_procs)
-        ]
+        stderr=asyncio.subprocess.PIPE))
+        sleep(0.1)
+
     logging.info(f"Launched {num_procs} processes")
-    
+
     result_futures = [
             future.communicate()
             for future in launch_futures
@@ -178,6 +202,6 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
     except Exception as ex:
         print("Caught error executing task", ex)
         raise
+    print("Results:", proc_results)
     return(results)
-    
-   
+

@@ -56,9 +56,11 @@ void init_run_profiles(py::module &m) {
      py::class_<RunCommand> runcommand(m, "RunCommand");
     runcommand
       .def(py::init<>())
+      .def_readonly("command_to_run", &RunCommand::command_to_run)
+      .def_readonly("number_of_copies", &RunCommand::number_of_copies)
       .def("SetCommand", &RunCommand::SetCommand);
     
-    py::class_<RunProfile> runprofile(m, "RunProfile");
+    py::class_<RunProfile, std::unique_ptr<RunProfile, py::nodelete>> runprofile(m, "RunProfile");
     runprofile
       .def(py::init<>([]() {
         RunProfile *runprofile = new RunProfile();
@@ -78,7 +80,13 @@ void init_run_profiles(py::module &m) {
         [](RunProfile &m, wxString name) { m.name = name; })
       .def_property("manager_command", 
         [](RunProfile &m) { return py::str(m.manager_command.ToStdString()); }, 
-        [](RunProfile &m, wxString &s) { m.manager_command = s; });
+        [](RunProfile &m, wxString &s) { m.manager_command = s; })
+      .def_property_readonly("run_commands", [](RunProfile const& e) { 
+        std::vector<RunCommand> v;
+        for (int i = 0; i < e.number_of_run_commands; i++) {
+          v.push_back(e.run_commands[i]);
+        }
+        return v; });
     
     py::class_<RunProfileManager> runprofilemanager(m, "RunProfileManager");
     runprofilemanager

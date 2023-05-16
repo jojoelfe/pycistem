@@ -1,7 +1,7 @@
-import pycistem
 import numpy as np
 from rich import print
 
+import pycistem
 
 image_ass_ids = [71 + i for i in range(900)]
 

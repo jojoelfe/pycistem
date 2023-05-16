@@ -1,11 +1,12 @@
-from . import cistem_program
-from ..database import get_image_info_from_db
-from ._cistem_constants import socket_send_next_job
-
+import asyncio
 from dataclasses import dataclass
 from typing import Union
 
-import asyncio
+from pycistem.database import get_image_info_from_db
+from pycistem.programs import cistem_program
+from pycistem.programs._cistem_constants import socket_send_next_job
+
+
 @dataclass
 class ApplyCtfParameters:
     input_filename: str
@@ -30,15 +31,15 @@ class ApplyCtfParameters:
 
 def parameters_from_database(database, image_asset_id, output_filename, **kwargs):
     image_info = get_image_info_from_db(database, image_asset=image_asset_id)
-    par = ApplyCtfParameters(input_filename=image_info['FILENAME'],
+    par = ApplyCtfParameters(input_filename=image_info["FILENAME"],
                              output_filename=output_filename,
-                             pixel_size=image_info['image_pixel_size'],
-                             acceleration_voltage=image_info['VOLTAGE'],
-                             spherical_aberration=image_info['SPHERICAL_ABERRATION'],
-                             amplitude_contrast=image_info['AMPLITUDE_CONTRAST'],
-                             defocus_1=image_info['DEFOCUS1'],
-                             defocus_2=image_info['DEFOCUS2'],
-                             astigmatism_angle=image_info['DEFOCUS_ANGLE'],
+                             pixel_size=image_info["image_pixel_size"],
+                             acceleration_voltage=image_info["VOLTAGE"],
+                             spherical_aberration=image_info["SPHERICAL_ABERRATION"],
+                             amplitude_contrast=image_info["AMPLITUDE_CONTRAST"],
+                             defocus_1=image_info["DEFOCUS1"],
+                             defocus_2=image_info["DEFOCUS2"],
+                             astigmatism_angle=image_info["DEFOCUS_ANGLE"],
                              **kwargs)
     return(par)
 

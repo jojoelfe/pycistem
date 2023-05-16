@@ -1,7 +1,8 @@
-from pycistem.programs import unblur
-import pycistem
 import numpy as np
 from rich import print
+
+import pycistem
+from pycistem.programs import unblur
 
 pycistem.set_cistem_path("/scratch/paris/elferich/cisTEM/build/je_combined_Intel-gpu-debug-static/src/")
 
@@ -24,4 +25,11 @@ par2 = unblur.UnblurParameters(
     output_binning_factor= 3.774,
     exposure_per_frame=0.8)
 
-print(unblur.run([par,par2],num_procs=2))
+pars = unblur.parameters_from_database("/nrs/elferich/old_THP1_brequinar/20230407_THP1_C_glycerol_g2_aa26/20230407_THP1_C_glycerol_g2_aa26.db",decolace=True)
+pars = pars[20:70]
+#print(pars)
+
+res = unblur.run(pars,num_procs=20)
+
+print(res)
+#unblur.write_results_to_database('/nrs/elferich/THP1_brequinar/20230407_THP1_C_glycerol_g2_aa26/20230407_THP1_C_glycerol_g2_aa26.db',pars,res)
