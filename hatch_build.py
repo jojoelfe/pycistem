@@ -1,15 +1,13 @@
 import os
 import subprocess
-import sys
 from typing import Any, Dict
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 # Available at setup time due to pyproject.toml
 from pybind11.setup_helpers import Pybind11Extension
-from setuptools import Distribution, setup
+from setuptools import setup
 from setuptools.command.build_ext import build_ext
-from setuptools.command.build_py import build_py as _build_py
 
 
 # Overwrite default compiler flags. It's kind of a hack to add the import flgs to the compiler string, but I think its the only way.
@@ -66,7 +64,8 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
         Pybind11Extension("pycistem/core/core",
             ["pycistem/core/core.cpp",
             "pycistem/core/database.cpp",
-            "pycistem/core/run_profiles.cpp",],
+            "pycistem/core/run_profiles.cpp",
+            "pycistem/core/euler_search.cpp",],
             # Example: passing in the version to the compiled code
             define_macros = [("VERSION_INFO", __version__)],
             include_dirs=["cisTEM/src/"],

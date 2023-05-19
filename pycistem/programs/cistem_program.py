@@ -22,6 +22,7 @@ def get_ip_addresses(family):
 
 HOST = ",".join([a[1] for a in get_ip_addresses(socket.AF_INET)])
 
+
 from pycistem.config import config
 
 FORMAT = "%(message)s"
@@ -57,7 +58,7 @@ def _encode_parameters(parameters):
     return buffer
 
 
-async def handle_manager(reader, writer, identity):
+async def handle_manager(reader, writer, identity, port):
     # Handles initial connection from the executable and directs them to the leader
     logger = logging.getLogger("cisTEM Manager")
     addr = writer.get_extra_info("peername")
@@ -79,7 +80,7 @@ async def handle_manager(reader, writer, identity):
     host = HOST.encode("utf-8")
     writer.write(len(host).to_bytes(4,"little"))
     writer.write(host)
-    port = b"9497"
+    port = str(port).encode("utf-8")
     writer.write(len(port).to_bytes(4,"little"))
     writer.write(port)
     await writer.drain()
@@ -112,17 +113,25 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
 
         # check length of signal_handlers
         if len(signal_handlers) > 0:
-            data = await reader.read(16)
-            result = None
-            logger.info("Waiting for signal handler")
-            if data in signal_handlers:
-                #logger.info(f"{addr} sent {data} and I know what to do with it")
-                result = await signal_handlers[data](reader,writer,logger)
-                results.append((parameter_index,result))
-            else:
-                logger.error(f"{addr} sent {data} and I don't know what to do with it, really")
-                #logger.error(f"{buffer}")
-                break
+            cont = True
+            while cont:
+                data = await reader.read(16)
+                result = None
+                logger.info("Waiting for signal handler")
+                if data != socket_job_result_queue:
+                    cont = False
+                else:
+                    result = await signal_handlers[data](reader,writer,logger)
+                    print(f"Ping : {len(result)}")
+                    continue
+                if data in signal_handlers:
+                    #logger.info(f"{addr} sent {data} and I know what to do with it")
+                    result = await signal_handlers[data](reader,writer,logger)
+                    results.append((parameter_index,result))
+                else:
+                    logger.error(f"{addr} sent {data} and I don't know what to do with it, really")
+                    #logger.error(f"{buffer}")
+                    break
         if socket_send_next_job not in signal_handlers:
             data = await reader.read(16)
             if data != socket_send_next_job:
@@ -148,30 +157,53 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
     logger = logging.getLogger("cisTEM Program")
     # Set HOST to curretn ip address
     #'127.0.0.1'  # Standard loopback interface address (localhost)
-    PORT = 9499        # Port to listen on (non-privileged ports are > 1023)
-    PORT_LEADER = 9497
 
     alphabet = string.ascii_letters + string.digits
     identity = "".join(secrets.choice(alphabet) for i in range(16))
     buffers = [(i,_encode_parameters(parameter)) for i, parameter in enumerate(parameters)]
 
     logger.info(f"Secret is {identity}")
+    start_port = 3000
+    leader_started = False
+    while not leader_started:
+        try:
+            server_leader = await asyncio.start_server(
+                lambda r,w : handle_leader(r,w, buffers,signal_handlers,results), "", start_port, family=socket.AF_INET)
+            leader_started = True
+            start_port += 1
+        except OSError:
+            logger.error(f"Port {start_port} already in use, trying next port")
+            start_port += 1
+            if start_port > 4000:
+                msg = "No ports available"
+                raise OSError(msg)
 
-    server_manager = await asyncio.start_server(
-        lambda r,w : handle_manager(r,w,identity), "", PORT)
+    port_leader = server_leader.sockets[0].getsockname()[1]
+    addrs = ", ".join(str(sock.getsockname()) for sock in server_leader.sockets)
+    logger.info(f"Serving leader on {addrs}")
+    manager_started = False
+    while not manager_started:
+        try:
+            server_manager = await asyncio.start_server(
+                lambda r,w : handle_manager(r,w,identity,port_leader), "",start_port, family=socket.AF_INET)
+            manager_started = True
+        except OSError:
+            logger.error(f"Port {start_port} already in use, trying next port")
+            start_port += 1
+            if start_port > 4000:
+                msg = "No ports available"
+                raise OSError(msg)
 
+    port_manager = server_manager.sockets[0].getsockname()[1]
     addrs = ", ".join(str(sock.getsockname()) for sock in server_manager.sockets)
     logger.info(f"Serving manager on {addrs}")
 
-    server_leader = await asyncio.start_server(
-        lambda r,w : handle_leader(r,w, buffers,signal_handlers,results), "", PORT_LEADER)
 
-    addrs = ", ".join(str(sock.getsockname()) for sock in server_leader.sockets)
-    logger.info(f"Serving leader on {addrs}")
 
-    cmd = Path(config["CISTEM_PATH"]) / executable
-    cmd = 'ssh -f erice "'+str(cmd)
-    cmd += f' {HOST} {PORT} {identity} {num_threads}"'
+    cmd = str(Path(config["CISTEM_PATH"]) / executable)
+    cmd = 'ssh -f erice "'+cmd
+
+    cmd += f' {HOST} {port_manager} {identity} {num_threads}"'
     print(cmd)
 
     launch_futures = []
@@ -198,10 +230,10 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
             for future in launch_futures
         ]
     try:
-        proc_results = await asyncio.gather(*result_futures, return_exceptions=False)
+        await asyncio.gather(*result_futures, return_exceptions=False)
     except Exception as ex:
         print("Caught error executing task", ex)
         raise
-    print("Results:", proc_results)
+    #print("Results:", proc_results)
     return(results)
 

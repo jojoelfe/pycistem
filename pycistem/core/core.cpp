@@ -11,6 +11,7 @@ namespace py = pybind11;
 
 void init_database(py::module &);
 void init_run_profiles(py::module &);
+void init_euler(py::module &);
 
 PYBIND11_MODULE(core, m)
 {
@@ -411,8 +412,9 @@ PYBIND11_MODULE(core, m)
   init_database(m); 
   //Run Profiles
   init_run_profiles(m);
+  // Euler Search
+  init_euler(m);
   // ElectronDose
-
    py::class_<ElectronDose> electrondose(m, "ElectronDose");
     electrondose
       .def(py::init<>())
