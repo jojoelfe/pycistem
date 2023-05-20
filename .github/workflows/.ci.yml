@@ -11,28 +11,20 @@ on:
       - main
 
 jobs:
-  build:
-    continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ['3.8','3.9','3.10','3.11']
-
+  compile_cistem:
     runs-on: ubuntu-20.04
     container: jojoelfe/cistem_ci_icpc
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '${{ matrix.python }}'
-      id: python
+      name: Checkout pycistem
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         repository: 'timothygrant80/cisTEM'
         path: 'cisTEM'
+      name: Checkout cisTEM
     - name: Get cisTEM sha
       id: getsha
       run: |
@@ -53,6 +45,35 @@ jobs:
         cd build/icpc
         CC=icc CXX=icpc CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
         make -j4
+    - name: Create artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: 'cisTEM artifact'
+        path: cisTEM
+  
+  build:
+    needs: compile_cistem
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.8','3.9','3.10','3.11']
+
+    runs-on: ubuntu-20.04
+    container: ghcr.io/grigoriefflab/cistem_build_env:v1.3.8
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '${{ matrix.python }}'
+      id: python
+    - name: Copy cisTEM artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: cisTEM artifact
+        path: cisTEM
     - name: Install Hatch
       run: ${{ steps.python.outputs.python-path }} -m pip install hatch
     - name: Build project
