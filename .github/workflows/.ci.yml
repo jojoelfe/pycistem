@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.8','3.9','3.10']
+        python: ['3.8','3.9','3.10','3.11']
 
     runs-on: ubuntu-18.04
     container: jojoelfe/cistem_ci_icpc
@@ -52,15 +52,11 @@ jobs:
         cd build/icpc
         CC=icc CXX=icpc CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
         make -j4
-    - name: Bootstrap poetry
+    - name: Install Hatch
+      run: pip install hatch
+    - name: Build project
       run: |
-        curl -sL https://install.python-poetry.org | python - -y
-    - name: Update PATH
-      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-    - name: Build pycistem
-      run: |
-        poetry install --no-root
-        poetry build
+        hatch build
     - name: Create artifact
       uses: actions/upload-artifact@v2
       with:
@@ -69,9 +65,10 @@ jobs:
     - name: Publish
       if: contains(github.ref, 'tags')
       env:
-        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
+        HATCH_INDEX_USER: jojoelfe
       run: |
-        poetry publish
+        hatch publish
         
 
 
