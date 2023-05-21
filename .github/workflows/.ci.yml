@@ -31,7 +31,7 @@ jobs:
         cd cisTEM
         echo "::set-output name=sha::$(git rev-parse HEAD)"
     - name: Cache cisTEM
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       id: cache
       with:
         key: 'sha_${{ steps.getsha.outputs.sha }}'
@@ -46,7 +46,7 @@ jobs:
         CC=icc CXX=icpc CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
         make -j4
     - name: Create artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: 'cisTEM artifact'
         path: cisTEM
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-20.04
     container: ghcr.io/grigoriefflab/cistem_build_env:v1.3.8
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - uses: actions/setup-python@v2
@@ -70,7 +70,7 @@ jobs:
         python-version: '${{ matrix.python }}'
       id: python
     - name: Copy cisTEM artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: cisTEM artifact
         path: cisTEM
@@ -80,7 +80,7 @@ jobs:
       run: |
         ${{ steps.python.outputs.python-path }} -m hatch build
     - name: Create artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: 'Wheel for Python ${{ matrix.python }}'
         path: dist/pycistem*.whl
