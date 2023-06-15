@@ -65,12 +65,12 @@ async def handle_manager(reader, writer, identity, port):
     #logger.info(f"{addr} connected to manager")
     writer.write(socket_please_identify)
     await writer.drain()
-    data = await reader.read(16)
+    data = await reader.readexactly(16)
     if data != socket_sending_identification:
         logger.error(f"{addr!r} {data} is not {socket_sending_identification}")
         writer.close()
         return
-    data = await reader.read(16)
+    data = await reader.readexactly(16)
     message= data.decode()
     if message != identity:
         logger.error(f"{addr!r} {message} is not {identity}: wrong process connected")
@@ -96,13 +96,13 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
 
     writer.write(socket_you_are_connected)
     await writer.drain()
-    data = await reader.read(16)
+    data = await reader.readexactly(16)
     if data != socket_send_next_job:
         logger.error(f"{addr!r} did not request next job, instead sent {data}")
         writer.close()
         return
-    data = await reader.read(8)
-    logger.info(f"{addr} sent {data} as dummy result")
+    data = await reader.readexactly(8)
+    #logger.info(f"{addr} sent {data} as dummy result")
     while len(buffers) > 0:
         parameter_index, buffer = buffers.pop(0)
         logger.info(f"Working on parameter set {parameter_index}")
@@ -115,14 +115,12 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
         if len(signal_handlers) > 0:
             cont = True
             while cont:
-                data = await reader.read(16)
+                data = await reader.readexactly(16)
                 result = None
-                logger.info("Waiting for signal handler")
                 if data != socket_job_result_queue:
                     cont = False
                 else:
                     result = await signal_handlers[data](reader,writer,logger)
-                    print(f"Ping : {len(result)}")
                     continue
                 if data in signal_handlers:
                     #logger.info(f"{addr} sent {data} and I know what to do with it")
@@ -133,11 +131,11 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
                     #logger.error(f"{buffer}")
                     break
         if socket_send_next_job not in signal_handlers:
-            data = await reader.read(16)
+            data = await reader.readexactly(16)
             if data != socket_send_next_job:
                 logger.error(f"{addr!r} did not request next job, instead sent {data}")
                 break
-            data = await reader.read(16)
+            data = await reader.readexactly(8)
             #logger.info(f"{addr} sent {data} after requesting next results")
     logger.info(f"{addr} finished, sending time to die")
     writer.write(socket_time_to_die)
@@ -151,18 +149,20 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
     writer.close()
 
 
-async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1):
+async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_threads=1, cmd_prefix="", cmd_suffix=""):
     results = []
     buffers = []
     logger = logging.getLogger("cisTEM Program")
     # Set HOST to curretn ip address
     #'127.0.0.1'  # Standard loopback interface address (localhost)
 
+    # Create secret to identify workers
     alphabet = string.ascii_letters + string.digits
     identity = "".join(secrets.choice(alphabet) for i in range(16))
     buffers = [(i,_encode_parameters(parameter)) for i, parameter in enumerate(parameters)]
-
     logger.info(f"Secret is {identity}")
+
+    # Start the leader
     start_port = 3000
     leader_started = False
     while not leader_started:
@@ -177,10 +177,11 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
             if start_port > 4000:
                 msg = "No ports available"
                 raise OSError(msg)
-
     port_leader = server_leader.sockets[0].getsockname()[1]
     addrs = ", ".join(str(sock.getsockname()) for sock in server_leader.sockets)
     logger.info(f"Serving leader on {addrs}")
+
+    # Start the manager
     manager_started = False
     while not manager_started:
         try:
@@ -193,22 +194,28 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
             if start_port > 4000:
                 msg = "No ports available"
                 raise OSError(msg)
-
     port_manager = server_manager.sockets[0].getsockname()[1]
     addrs = ", ".join(str(sock.getsockname()) for sock in server_manager.sockets)
     logger.info(f"Serving manager on {addrs}")
 
 
-
+    # Starting workers
     cmd = str(Path(config["CISTEM_PATH"]) / executable)
-    cmd = 'ssh -f erice "'+cmd
+    cmd += f' {HOST} {port_manager} {identity} {num_threads}'
 
-    cmd += f' {HOST} {port_manager} {identity} {num_threads}"'
-    print(cmd)
+    # Test if cmd_prefix is iterable
+    if type(num_procs) == int and type(cmd_prefix) == str:
+        cmd_prefix = [cmd_prefix for i in range(num_procs)]
+
+    if type(num_procs) == int and type(cmd_suffix) == str:
+        cmd_suffix = [cmd_suffix for i in range(num_procs)]
+
+    
 
     launch_futures = []
     if type(num_procs) == int:
-        tasks = [cmd for i in range(num_procs)]
+        tasks = [cmd_prefix[i] + cmd +cmd_suffix[i] for i in range(num_procs)]
+        print(tasks)
     elif type(num_procs) == RunProfile:
         tasks = []
         num_procs.SubstituteExecutableName(executable)
@@ -230,10 +237,10 @@ async def run(executable,parameters,signal_handlers={},num_procs=1,num_threads=1
             for future in launch_futures
         ]
     try:
-        await asyncio.gather(*result_futures, return_exceptions=False)
+        proc_results = await asyncio.gather(*result_futures, return_exceptions=False)
     except Exception as ex:
         print("Caught error executing task", ex)
         raise
-    #print("Results:", proc_results)
+    print("Results:", proc_results)
     return(results)
 

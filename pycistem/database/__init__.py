@@ -1,9 +1,11 @@
 import contextlib
 import sqlite3
 from selectors import EpollSelector
+from pathlib import Path
 
 import pandas as pd
 import starfile
+import mrcfile
 
 
 def get_image_info_from_db(project,image_asset=None, get_ctf=True):
@@ -45,6 +47,31 @@ def get_tm_info_from_db(project,image_asset,tm_id=None):
             return(df1.iloc[0])
         else:
             return(None)
+        
+
+
+def ensure_template_is_a_volume_asset(project: str, template_filename: str, pixel_size: float) -> int:
+    with contextlib.closing(sqlite3.connect(project)) as con:
+        df1 = pd.read_sql_query(f"SELECT * FROM VOLUME_ASSETS WHERE FILENAME='{template_filename}'",con)
+        if df1.shape[0] > 0:
+            return(df1.iloc[0]["VOLUME_ASSET_ID"])
+        else:
+            # Open using mrcfile and get dimensions
+            with mrcfile.open(template_filename) as mrc:
+                x_size = mrc.header.nx
+                y_size = mrc.header.ny
+                z_size = mrc.header.nz
+            #Get highest VOLUME_ASSET_ID
+            df2 = pd.read_sql_query("SELECT MAX(VOLUME_ASSET_ID) as max_id FROM VOLUME_ASSETS",con)
+            max_id = df2.iloc[0]["max_id"]
+            if max_id is None:
+                vol_id = 1
+            else:
+                vol_id = max_id + 1
+            con.execute(f"INSERT INTO VOLUME_ASSETS (VOLUME_ASSET_ID,NAME,FILENAME,PIXEL_SIZE,X_SIZE,Y_SIZE,Z_SIZE) VALUES ('{vol_id}','{Path(template_filename).stem}','{template_filename}','{pixel_size}','{x_size}','{y_size}','{z_size}')")
+            con.commit()
+            return(vol_id)
+       
 
 def write_match_template_to_starfile(project, filename,overwrite=True, switch_phi_psi=False):
 
