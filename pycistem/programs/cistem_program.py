@@ -27,7 +27,7 @@ from pycistem.config import config
 
 FORMAT = "%(message)s"
 logging.basicConfig(
-    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+    level="ERROR", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 
 

@@ -488,6 +488,7 @@ PYBIND11_MODULE(core, m)
       .def_property_readonly("real_values", [](Image &__inst) {
             //return 5;
             py::capsule buffer_handle([](){});
+            if (__inst.logical_z_dimension == 1) {
             return py::array_t<float>(
               {__inst.logical_y_dimension, __inst.logical_x_dimension},
               {sizeof(float) * (__inst.logical_x_dimension + __inst.padding_jump_value), /* Strides (in bytes) for each index */
@@ -495,6 +496,15 @@ PYBIND11_MODULE(core, m)
               __inst.real_values,
               buffer_handle
               );
+            } else {
+              return py::array_t<float>(
+              {__inst.logical_z_dimension, __inst.logical_y_dimension, __inst.logical_x_dimension},
+              {sizeof(float) * (__inst.logical_x_dimension + __inst.padding_jump_value) * (__inst.logical_y_dimension) ,sizeof(float) * (__inst.logical_x_dimension + __inst.padding_jump_value), sizeof(float)
+                         },
+              __inst.real_values,
+              buffer_handle
+              );
+            }
          }
       )
       .def_property_readonly("complex_values", [](Image &__inst) {
@@ -754,12 +764,9 @@ PYBIND11_MODULE(core, m)
              auto __ret = __inst.ReturnNearest2D(wanted_physical_x_coordinate, wanted_physical_y_coordinate);
              return std::make_tuple(__ret, wanted_physical_x_coordinate, wanted_physical_y_coordinate);
            })
-      .def("ExtractSlice", [](Image &__inst, float resolution_limit, bool apply_resolution_limit)
+      .def("ExtractSlice", [](Image &__inst, Image &image_to_extract, AnglesAndShifts &angles_and_shifts_of_image, float resolution_limit, bool apply_resolution_limit)
            {
-             ::Image image_to_extract;
-             AnglesAndShifts angles_and_shifts_of_image;
              __inst.ExtractSlice(image_to_extract, angles_and_shifts_of_image, resolution_limit, apply_resolution_limit);
-             return std::make_tuple(image_to_extract, angles_and_shifts_of_image);
            })
       .def("ExtractSliceByRotMatrix", [](Image &__inst, float resolution_limit, bool apply_resolution_limit)
            {

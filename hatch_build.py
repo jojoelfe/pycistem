@@ -91,6 +91,7 @@ class CustomBuildHook(BuildHookInterface):
         ext_path = d.get_command_obj("build_ext").get_ext_fullpath("pycistem.core.core")
         int_path = d.get_command_obj("build_ext").get_ext_filename("pycistem.core.core")
         build_data["pure_python"] = False
+        build_data["infer_tag"] = True
         build_data["force_include"][ext_path] = int_path
 
 if __name__ == "__main__":
