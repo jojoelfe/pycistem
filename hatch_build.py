@@ -17,11 +17,8 @@ class custom_build_ext(build_ext):
         # removes the "default" compiler flags that would
         # otherwise get passed on to to the compiler, i.e.,
         # distutils.sysconfig.get_var("CFLAGS").
-        __compiler__ = "icpc"
-        if os.path.exists("/opt/WX/intel-static/bin/wx-config"):
-            wx_config = "/opt/WX/intel-static/bin/wx-config"
-        else:
-            wx_config = "wx-config"
+        __compiler__ = "g++"
+        wx_config = "wx-config"
 
         wxflags = subprocess.run([wx_config, "--cxxflags"], stdout=subprocess.PIPE).stdout.decode("utf-8")
         # Strip the newline from the wxflags
@@ -30,11 +27,11 @@ class custom_build_ext(build_ext):
         wxlibflags = subprocess.run([wx_config, "--libs"], stdout=subprocess.PIPE).stdout.decode("utf-8")
         # Strip the newline from the wxlibflags
         wxlibflags = wxlibflags.strip()
-        __WX_FLAGS__ = wxflags + "  -DwxUSE_GUI=0 -IcisTEM/build/icpc"
-        __CPP_FLAGS__ = "-fPIC -O3 -no-prec-div -no-prec-sqrt -w2 -D_FILE_OFFSET_BITS=64 -std=c++17 -D_LARGEFILE_SOURCE -DEXPERIMENTAL -DMKL -mkl=sequential -fopenmp"
+        __WX_FLAGS__ = wxflags + "  -DwxUSE_GUI=0 -IcisTEM/build/gcc"
+        __CPP_FLAGS__ = "-fPIC -O3 -D_FILE_OFFSET_BITS=64 -std=c++17 -D_LARGEFILE_SOURCE -DEXPERIMENTAL -fopenmp"
         self.compiler.set_executable("compiler_so", __compiler__ + " " + __WX_FLAGS__ + " " + __CPP_FLAGS__ )
         self.compiler.set_executable("compiler_cxx", __compiler__ + " -fPIC " + __WX_FLAGS__ + " " + __CPP_FLAGS__)
-        self.compiler.set_executable("linker_so", __compiler__  + " " + __CPP_FLAGS__ +" -shared -static-intel -qopenmp-link=static -wd10237 -lffi")
+        self.compiler.set_executable("linker_so", __compiler__  + " " + __CPP_FLAGS__ +" -shared -Wl,-Bstatic  -lffi -lfftw3 -lfftw3f -Wl,-Bdynamic")
         build_ext.build_extensions(self)
 
 
@@ -43,10 +40,7 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
     # CHeck if /opt/WX/intel-static/bin/wx-config exists
     # If it does, use it to build the extension
     # If it doesn't, use the system wx-config
-    if os.path.exists("/opt/WX/intel-static/bin/wx-config"):
-        wx_config = "/opt/WX/intel-static/bin/wx-config"
-    else:
-        wx_config = "wx-config"
+    wx_config = "wx-config"
 
     wxflags = subprocess.run([wx_config, "--cxxflags"], stdout=subprocess.PIPE).stdout.decode("utf-8")
     # Strip the newline from the wxflags
@@ -58,19 +52,20 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
 
     # This code pulls come key compile info out of the config.log file
     __version__ = "0.1.4"
-    wxflags + "  -DwxUSE_GUI=0 -IcisTEM/build/icpc"
+    wxflags + "-DwxUSE_GUI=0 -IcisTEM/build/gcc"
     __WX_LIBS_BASE__ = wxlibflags
     ext_modules = [
         Pybind11Extension("pycistem/core/core",
             ["pycistem/core/core.cpp",
             "pycistem/core/database.cpp",
             "pycistem/core/run_profiles.cpp",
-            "pycistem/core/euler_search.cpp",],
+            "pycistem/core/euler_search.cpp",
+             ],
             # Example: passing in the version to the compiled code
             define_macros = [("VERSION_INFO", __version__)],
             include_dirs=["cisTEM/src/"],
-            extra_objects = [ "cisTEM/build/icpc/src/libcore.a"],
-            extra_link_args = __WX_LIBS_BASE__.split(" ")
+            extra_objects = [ "cisTEM/build/gcc/src/libcore.a"],
+            extra_link_args = __WX_LIBS_BASE__.split()
             ),
     ]
     setup_kwargs.update(

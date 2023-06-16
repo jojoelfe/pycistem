@@ -100,9 +100,9 @@ void init_database(py::module &m) {
       .def("ReturnSingleIntFromSelectCommand", &Database::ReturnSingleIntFromSelectCommand)
       .def("ReturnSingleLongFromSelectCommand", &Database::ReturnSingleLongFromSelectCommand)
       .def("ReturnSingleDoubleFromSelectCommand", &Database::ReturnSingleDoubleFromSelectCommand)
-      .def("ReturnIntArrayFromSelectCommand", &Database::ReturnIntArrayFromSelectCommand)
-      .def("ReturnLongArrayFromSelectCommand", &Database::ReturnLongArrayFromSelectCommand)
-      .def("ReturnStringArrayFromSelectCommand", &Database::ReturnStringArrayFromSelectCommand)
+      //.def("ReturnIntArrayFromSelectCommand", &Database::ReturnIntArrayFromSelectCommand)
+      //.def("ReturnLongArrayFromSelectCommand", &Database::ReturnLongArrayFromSelectCommand)
+      //.def("ReturnStringArrayFromSelectCommand", &Database::ReturnStringArrayFromSelectCommand)
       .def("DoesTableExist", &Database::DoesTableExist)
       .def("DoesColumnExist", &Database::DoesColumnExist)
       .def("ReturnProcessLockInfo", [](Database &__inst)
@@ -197,7 +197,7 @@ void init_database(py::module &m) {
              return std::make_tuple(defocus_1, defocus_2, defocus_angle, phase_shift, amplitude_contrast, tilt_angle, tilt_axis);
            })
       .def("AddRefinementPackageAsset", &Database::AddRefinementPackageAsset)
-      .def("Return2DClassMembers", &Database::Return2DClassMembers)
+      //.def("Return2DClassMembers", &Database::Return2DClassMembers)
       .def("ReturnNumberOf2DClassMembers", &Database::ReturnNumberOf2DClassMembers)
       .def("AddOrReplaceRunProfile", &Database::AddOrReplaceRunProfile)
       .def("DeleteRunProfile", &Database::DeleteRunProfile)
@@ -269,7 +269,7 @@ void init_database(py::module &m) {
       .def("BeginAllRefinementPackagesSelect", &Database::BeginAllRefinementPackagesSelect)
       .def("GetNextRefinementPackage", &Database::GetNextRefinementPackage)
       .def("EndAllRefinementPackagesSelect", &Database::EndAllRefinementPackagesSelect)
-      .def("AddStartupJob", &Database::AddStartupJob)
+      //.def("AddStartupJob", &Database::AddStartupJob)
       .def("AddReconstructionJob", &Database::AddReconstructionJob)
       .def("GetReconstructionJob", [](Database &__inst, long wanted_reconstruction_id)
            {
@@ -331,7 +331,7 @@ void init_database(py::module &m) {
              __inst.CopyParticleAssetsFromResultsTable(picking_job_id, parent_image_asset_id);
              return std::make_tuple(picking_job_id, parent_image_asset_id);
            })
-      .def("AddArrayOfParticlePositionAssetsToResultsTable", [](Database &__inst, ArrayOfParticlePositionAssets *array_of_assets)
+      /*.def("AddArrayOfParticlePositionAssetsToResultsTable", [](Database &__inst, ArrayOfParticlePositionAssets *array_of_assets)
            {
              int picking_job_id;
              __inst.AddArrayOfParticlePositionAssetsToResultsTable(picking_job_id, array_of_assets);
@@ -351,6 +351,7 @@ void init_database(py::module &m) {
              auto __ret = __inst.ReturnArrayOfParticlePositionAssetsFromAssetsTable(parent_image_asset_id);
              return std::make_tuple(__ret, parent_image_asset_id);
            })
+       */
       .def("RemoveParticlePositionsFromResultsList", [](Database &__inst)
            {
              int picking_job_id;
