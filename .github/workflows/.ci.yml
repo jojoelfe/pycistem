@@ -32,8 +32,8 @@ jobs:
       with:
         key: 'sha_${{ steps.getsha.outputs.sha }}'
         path: |
-          'cisTEM/build/gcc/src/libcore.a'
-          'cisTEM/build/gcc/cistem_config.h'
+          cisTEM/build/gcc/src/libcore.a
+          cisTEM/build/gcc/cistem_config.h
     - name: Build cisTEM
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
@@ -49,8 +49,8 @@ jobs:
       with:
         name: 'cisTEM artifact'
         path: |
-          'cisTEM/build/gcc/src/libcore.a'
-          'cisTEM/build/gcc/cistem_config.h'
+          cisTEM/build/gcc/src/libcore.a
+          cisTEM/build/gcc/cistem_config.h
   
   build:
     needs: compile_cistem
@@ -81,8 +81,8 @@ jobs:
       with:
         name: cisTEM artifact
         path: |
-          'cisTEM/build/gcc/src/libcore.a'
-          'cisTEM/build/gcc/cistem_config.h'
+          cisTEM/build/gcc/src/libcore.a
+          cisTEM/build/gcc/cistem_config.h
     - name: Install Hatch
       run: pyenv local ${{ matrix.python }} && pip install hatch
     - name: Build project
