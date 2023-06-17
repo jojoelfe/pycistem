@@ -31,7 +31,9 @@ jobs:
       id: cache
       with:
         key: 'sha_${{ steps.getsha.outputs.sha }}'
-        path: 'cisTEM/build/gcc/src/libcore.a'
+        path: |
+          'cisTEM/build/gcc/src/libcore.a'
+          'cisTEM/build/gcc/cistem_config.h'
     - name: Build cisTEM
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
@@ -46,7 +48,9 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: 'cisTEM artifact'
-        path: 'cisTEM/build/gcc/src/libcore.a'
+        path: |
+          'cisTEM/build/gcc/src/libcore.a'
+          'cisTEM/build/gcc/cistem_config.h'
   
   build:
     needs: compile_cistem
@@ -68,9 +72,6 @@ jobs:
       run: apt-get update && apt-get install unzip
     - name: Install pyenv
       uses: gabrielfalcao/pyenv-action@v11
-      with:
-        default: "${{ matrix.python }}"
-        command: pip install -U pip  # upgrade pip after installing python
     - name: Install python
       run: |
         pyenv install -s ${{ matrix.python }}
@@ -79,7 +80,9 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: cisTEM artifact
-        path: 'cisTEM/build/gcc/src/libcore.a'
+        path: |
+          'cisTEM/build/gcc/src/libcore.a'
+          'cisTEM/build/gcc/cistem_config.h'
     - name: Install Hatch
       run: pyenv local ${{ matrix.python }} && pip install hatch
     - name: Build project
