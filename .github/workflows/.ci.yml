@@ -98,7 +98,7 @@ jobs:
         HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
         HATCH_INDEX_USER: __token__
       run: |
-        pyenv local ${{ matrix.python }} && hatch publish
+        pyenv local ${{ matrix.python }} && hatch publish dist/*.whl
         
 
 
