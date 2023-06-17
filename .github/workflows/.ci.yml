@@ -63,7 +63,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Install unzip
-      run: sudo apt-get install unzip
+      run: apt-get update && apt-get install unzip
     - name: Install python version
       uses: gabrielfalcao/pyenv-action@v11
       with:
