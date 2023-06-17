@@ -64,22 +64,25 @@ jobs:
         fetch-depth: 0
     - name: Install unzip
       run: apt-get update && apt-get install unzip
-    - name: Install python version
+    - name: Install pyenv
       uses: gabrielfalcao/pyenv-action@v11
       with:
         default: "${{ matrix.python }}"
         command: pip install -U pip  # upgrade pip after installing python
-
+    - name: Install python
+      run: |
+        pyenv install -s ${{ matrix.python }}
+        pyenv local ${{ matrix.python }} && pip install -U pip    
     - name: Copy cisTEM artifact
       uses: actions/download-artifact@v3
       with:
         name: cisTEM artifact
         path: 'cisTEM/build/gcc/src/libcore.a'
     - name: Install Hatch
-      run: pyenv local 3.8 && pip install hatch
+      run: pyenv local ${{ matrix.python }} && pip install hatch
     - name: Build project
       run: |
-        hatch build
+        pyenv local ${{ matrix.python }} && hatch build
     - name: Create artifact
       uses: actions/upload-artifact@v3
       with:
@@ -91,7 +94,7 @@ jobs:
         HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
         HATCH_INDEX_USER: jojoelfe
       run: |
-        hatch publish
+        pyenv local ${{ matrix.python }} && hatch publish
         
 
 
