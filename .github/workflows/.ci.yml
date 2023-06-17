@@ -62,10 +62,12 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - uses: actions/setup-python@v2
+    - name: Install python version
+      uses: gabrielfalcao/pyenv-action@v11
       with:
-        python-version: '${{ matrix.python }}'
-      id: python
+        default: "${{ matrix.python }}"
+        command: pip install -U pip  # upgrade pip after installing python
+
     - name: Copy cisTEM artifact
       uses: actions/download-artifact@v3
       with:
@@ -87,7 +89,7 @@ jobs:
         HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
         HATCH_INDEX_USER: jojoelfe
       run: |
-        ${{ steps.python.outputs.python-path }} -m hatch publish
+        python -m hatch publish
         
 
 
