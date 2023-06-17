@@ -96,7 +96,7 @@ jobs:
       if: contains(github.ref, 'tags')
       env:
         HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
-        HATCH_INDEX_USER: jojoelfe
+        HATCH_INDEX_USER: __token__
       run: |
         pyenv local ${{ matrix.python }} && hatch publish
         
