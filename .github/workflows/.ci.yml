@@ -76,7 +76,7 @@ jobs:
         name: cisTEM artifact
         path: 'cisTEM/build/gcc/src/libcore.a'
     - name: Install Hatch
-      run: pip install hatch
+      run: pyenv local 3.8 && pip install hatch
     - name: Build project
       run: |
         hatch build
