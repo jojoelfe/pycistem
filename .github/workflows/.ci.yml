@@ -81,8 +81,7 @@ jobs:
       with:
         name: cisTEM artifact
         path: |
-          cisTEM/build/gcc/src/libcore.a
-          cisTEM/build/gcc/cistem_config.h
+          cisTEM/build/gcc
     - name: Install Hatch
       run: pyenv local ${{ matrix.python }} && pip install hatch
     - name: Build project
