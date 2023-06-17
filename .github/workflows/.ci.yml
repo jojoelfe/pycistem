@@ -13,17 +13,13 @@ on:
 jobs:
   compile_cistem:
     runs-on: ubuntu-20.04
-    container: jojoelfe/cistem_ci_icpc
+    container: jojoelfe/cistem_ci_gcc
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-      name: Checkout pycistem
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        repository: 'timothygrant80/cisTEM'
-        path: 'cisTEM'
+      name: Checkout pycistem
+    - run: git -C cisTEM pull || git clone https://github.com/timothygrant80/cisTEM.git
       name: Checkout cisTEM
     - name: Get cisTEM sha
       id: getsha
@@ -35,21 +31,21 @@ jobs:
       id: cache
       with:
         key: 'sha_${{ steps.getsha.outputs.sha }}'
-        path: 'cisTEM'
+        path: 'cisTEM/build/gcc/src/libcore.a'
     - name: Build cisTEM
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cd cisTEM
         ./regenerate_project.b
-        mkdir -p build/icpc
+        mkdir -p build/gcc
         cd build/icpc
-        CC=icc CXX=icpc CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --enable-experimental --enable-staticmode --with-wx-config=wx-config  --enable-samples
-        make -j4
+        CC=gcc CXX=g++ CPPFLAGS=-fPIC CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --enable-staticmode --enable-samples --enable-experimental --enable-openmp --with-wx-config=wx-config
+        make -j 2 libcore.a
     - name: Create artifact
       uses: actions/upload-artifact@v3
       with:
         name: 'cisTEM artifact'
-        path: cisTEM
+        path: 'cisTEM/build/gcc/src/libcore.a'
   
   build:
     needs: compile_cistem
@@ -60,7 +56,7 @@ jobs:
         python: ['3.8','3.9','3.10','3.11']
 
     runs-on: ubuntu-20.04
-    container: ghcr.io/grigoriefflab/cistem_build_env:v1.3.8
+    container: jojoelfe/cistem_ci_gcc
     steps:
     - uses: actions/checkout@v3
       with:
@@ -73,7 +69,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: cisTEM artifact
-        path: cisTEM
+        path: 'cisTEM/build/gcc/src/libcore.a'
     - name: Install Hatch
       run: ${{ steps.python.outputs.python-path }} -m pip install hatch
     - name: Build project

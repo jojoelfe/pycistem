@@ -31,7 +31,7 @@ class custom_build_ext(build_ext):
         __CPP_FLAGS__ = "-fPIC -O3 -D_FILE_OFFSET_BITS=64 -std=c++17 -D_LARGEFILE_SOURCE -DEXPERIMENTAL -fopenmp"
         self.compiler.set_executable("compiler_so", __compiler__ + " " + __WX_FLAGS__ + " " + __CPP_FLAGS__ )
         self.compiler.set_executable("compiler_cxx", __compiler__ + " -fPIC " + __WX_FLAGS__ + " " + __CPP_FLAGS__)
-        self.compiler.set_executable("linker_so", __compiler__  + " " + __CPP_FLAGS__ +" -shared -Wl,-Bstatic  -lffi -lfftw3 -lfftw3f -Wl,-Bdynamic")
+        self.compiler.set_executable("linker_so", __compiler__  + " " + __CPP_FLAGS__ +" -shared ")
         build_ext.build_extensions(self)
 
 
@@ -54,6 +54,10 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
     __version__ = "0.1.4"
     wxflags + "-DwxUSE_GUI=0 -IcisTEM/build/gcc"
     __WX_LIBS_BASE__ = wxlibflags
+    link_args = __WX_LIBS_BASE__.split()
+    link_args.append("-lffi")
+    #link_args.append("-Wl,-Bstatic")
+    link_args.append("-l:libfftw3f.a")
     ext_modules = [
         Pybind11Extension("pycistem/core/core",
             ["pycistem/core/core.cpp",
@@ -65,7 +69,7 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
             define_macros = [("VERSION_INFO", __version__)],
             include_dirs=["cisTEM/src/"],
             extra_objects = [ "cisTEM/build/gcc/src/libcore.a"],
-            extra_link_args = __WX_LIBS_BASE__.split()
+            extra_link_args = link_args,
             ),
     ]
     setup_kwargs.update(
