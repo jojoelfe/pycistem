@@ -14,8 +14,8 @@ defocus_angle = 35.0
 
 volume = Image()
 
-volume.QuickAndDirtyReadSlices("/groups/elferich/mammalian_ribosome_structures/6swa_simulate_bfsca1_5.mrc",1,box_size)
-
+#volume.QuickAndDirtyReadSlices("/groups/elferich/mammalian_ribosome_structures/6swa_simulate_bfsca1_5.mrc",1,box_size)
+volume.Allocate(box_size,box_size,box_size,True,True)
 volume.ForwardFFT(True)
 volume.ZeroCentralPixel()
 volume.SwapRealSpaceQuadrants()

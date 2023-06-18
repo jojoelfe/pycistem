@@ -1,4 +1,5 @@
-from pycistem.core import *
+from pycistem.core.core import *
+
 
 hosts= [
     "host1",
@@ -18,6 +19,7 @@ delay=100
 rpm = RunProfileManager()
 # 96 GPus
 rp = RunProfile()
+print("Ho")
 rp.name = "96GPUs"
 rp.manager_command = manager_command
 rp.RemoveAll()
@@ -25,7 +27,7 @@ for host in hosts:
     for igpu in range(0,8):
         rp.AddCommand(f'ssh -f {host} "unset CUDA_VISIBLE_DEVICES && export CUDA_VISIBLE_DEVICES={igpu} && {program_command}"',1,num_threads,False,0,delay)
 rpm.AddProfile(rp)
-
+print("Ha")
 rp = RunProfile()
 rp.name = "88GPUs"
 rp.manager_command = manager_command

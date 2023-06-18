@@ -1,6 +1,7 @@
 import os
 import subprocess
 from typing import Any, Dict
+from pathlib import Path
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
@@ -82,13 +83,18 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
 
 class CustomBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
-        if version == "editable":
-            return
+        
         t = {"packages": ["pycistem"]}
         build(t)
         d = setup(**t,script_args=["build_ext"])
         ext_path = d.get_command_obj("build_ext").get_ext_fullpath("pycistem.core.core")
         int_path = d.get_command_obj("build_ext").get_ext_filename("pycistem.core.core")
+        # Create symlink from ext_path to int_path, overwrite if nescessary
+        try:
+            os.remove(int_path)
+        except:
+            pass
+        os.symlink(Path(ext_path).absolute(),int_path)
         build_data["pure_python"] = False
         build_data["infer_tag"] = True
         build_data["force_include"][ext_path] = int_path

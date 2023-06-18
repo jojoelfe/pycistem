@@ -60,14 +60,9 @@ void init_run_profiles(py::module &m) {
       .def_readonly("number_of_copies", &RunCommand::number_of_copies)
       .def("SetCommand", &RunCommand::SetCommand);
     
-    py::class_<RunProfile, std::unique_ptr<RunProfile, py::nodelete>> runprofile(m, "RunProfile");
+    py::class_<RunProfile> runprofile(m, "RunProfile");
     runprofile
-      .def(py::init<>([]() {
-        RunProfile *runprofile = new RunProfile();
-        py::print("RunProfile constructor called");
-        py::print(py::str(runprofile->manager_command.ToStdString()));
-        return runprofile;
-      }))
+      .def(py::init<>())
       .def("AddCommand", (void (RunProfile::*)(::RunCommand))&RunProfile::AddCommand)
       .def("AddCommand", (void (RunProfile::*)(wxString,int,int,bool,int,int))&RunProfile::AddCommand)
       .def("RemoveCommand", &RunProfile::RemoveCommand)
@@ -77,14 +72,14 @@ void init_run_profiles(py::module &m) {
       .def("CheckNumberAndGrow", &RunProfile::CheckNumberAndGrow)
       .def_property("name",
         [](const RunProfile &m) { return py::str(m.name.ToStdString()); },
-        [](RunProfile &m, wxString name) { m.name = name; })
+        [](RunProfile &m, wxString &name) { m.name = name; })
       .def_property("manager_command", 
         [](RunProfile &m) { return py::str(m.manager_command.ToStdString()); }, 
         [](RunProfile &m, wxString &s) { m.manager_command = s; })
       .def_property_readonly("run_commands", [](RunProfile const& e) { 
-        std::vector<RunCommand> v;
+        std::vector<RunCommand*> v;
         for (int i = 0; i < e.number_of_run_commands; i++) {
-          v.push_back(e.run_commands[i]);
+          v.push_back(&e.run_commands[i]);
         }
         return v; });
     
@@ -110,9 +105,9 @@ void init_run_profiles(py::module &m) {
       .def("ImportRunProfilesFromDisk", &RunProfileManager::ImportRunProfilesFromDisk)
       .def_readonly("number_of_run_profiles", &RunProfileManager::number_of_run_profiles)
       .def_property_readonly("run_profiles", [](RunProfileManager const& e) { 
-        std::vector<RunProfile> v;
+        std::vector<RunProfile*> v;
         for (int i = 0; i < e.number_of_run_profiles; i++) {
-          v.push_back(e.run_profiles[i]);
+          v.push_back(&e.run_profiles[i]);
         }
         return v; })
       .def(py::init<>());   

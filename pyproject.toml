@@ -31,6 +31,9 @@ Source = "https://github.com/jojoelfe/pycistem"
 
 [tool.hatch.build.hooks.custom]
 
+[tool.hatch.build]
+dev-mode-exact = true
+
 [tool.hatch.version]
 path = "pycistem/__init__.py"
 
