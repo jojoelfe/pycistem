@@ -2,11 +2,14 @@ import contextlib
 import sqlite3
 from pathlib import Path
 from selectors import EpollSelector
-from ..core import Project
+from pycistem.core import Project
 
 import mrcfile
 import pandas as pd
 import starfile
+import mdocfile
+
+from typing import Union, List
 
 def create_project(
         project_name: str,
@@ -19,14 +22,90 @@ def create_project(
         project_name,
     )
     
-def import_movies(project_path: Union[str, Path], movies: Union[str, Path, List[Union[str, Path]]]):
+def import_movies(project_path: Union[str, Path], movies: Union[str, Path, List[Union[str, Path]]], pattern="*.tif", gain: Union[bool, str, Path] = True, import_metadata: bool = True):
+    if isinstance(project_path, Path):
+        project_path = project_path.as_posix()
     project = Project()
-    project.Open(project_path)
+    project.OpenProjectFromFile(project_path)
+    num_movies = project.database.ReturnSingleLongFromSelectCommand(
+        "SELECT COUNT(*) FROM MOVIE_ASSETS;"
+    )
     if isinstance(movies, str) or isinstance(movies, Path):
-        movies = [movies]
-    for movie in movies:
-        project.ImportMovie(movie)
-    project.Close()
+        movies = Path(movies)
+        if movies.is_dir():
+            movies = list(movies.glob(pattern))
+        else:
+            movies = [movies]
+    movies = [Path(m).as_posix() for m in movies]
+    
+    movie_filenames = sorted(
+        movies
+    )
+    if isinstance(gain, bool) and gain:
+        gain_filenames = [list(Path(movie).parent.glob("*.dm4"))[0] for movie in movie_filenames]
+
+    metadata_entries = []
+    for i, movie in enumerate(movie_filenames):
+        metadata = mdocfile.read(movie + ".mdoc")
+        metadata_entries.append(metadata.iloc[0])
+        # Insert data in MOVIE_ASSETS_METADATA using sqlite3
+        project.database.ExecuteSQL(
+            f"INSERT INTO MOVIE_ASSETS_METADATA "
+            f"(MOVIE_ASSET_ID,"
+            f"METADATA_SOURCE,"
+            f"CONTENT_JSON,"
+            f"TILT_ANGLE,"
+            f"STAGE_POSITION_X,"
+            f"STAGE_POSITION_Y,"
+            f"STAGE_POSITION_Z,"
+            f"IMAGE_SHIFT_X,"
+            f"IMAGE_SHIFT_Y,"
+            f"EXPOSURE_DOSE,"
+            f"ACQUISITION_TIME)"
+            f"VALUES ({i+1},"
+            f"'serialem_frames_mdoc',"
+            f"'{metadata.iloc[0].to_json(default_handler=str)}',"
+            f" {metadata.loc[0,'TiltAngle']},"
+            f" {metadata.loc[0,'StagePosition'][0]},"
+            f" {metadata.loc[0,'StagePosition'][1]},"
+            f" {metadata.loc[0,'StageZ']},"
+            f" {metadata.loc[0,'ImageShift'][0]},"
+            f" {metadata.loc[0,'ImageShift'][1]},"
+            f" {metadata.loc[0,'ExposureDose']},"
+            f" {datetime_to_msdos(datetime.strptime(metadata.loc[0,'DateTime'],'%d-%b-%Y %H:%M:%S'))});"
+        )
+
+    project.database.BeginMovieAssetInsert()
+    for i, movie in enumerate(movie_filenames):
+
+        project.database.AddNextMovieAsset(
+            i + 1,
+            Path(movie).name,
+            movie,
+            0,
+            11520,
+            8184,
+            34,
+            300,
+            0.53,
+            0.8,
+            2.7,
+            gain,
+            "",
+            3.774,
+            0,
+            0,
+            1.0,
+            1.0,
+            0,
+            25,
+            1,
+        )
+    project.database.EndMovieAssetInsert()
+
+    project.database.Close(True)
+    return(len(movie_filenames))
+
 
 
 
