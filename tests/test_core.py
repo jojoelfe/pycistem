@@ -1,5 +1,7 @@
 import pytest
-from pycistem.core import Image, AnglesAndShifts, CTF, RunProfileManager, RunProfile
+
+from pycistem.core import CTF, AnglesAndShifts, Image, RunProfile, RunProfileManager
+
 
 @pytest.fixture
 def volume():
@@ -40,7 +42,7 @@ def test_extract_slice(volume, projection):
     projection.ApplyCTF(ctf,False,False,False)
     projection.BackwardFFT()
 
-    
+
 
 def test_run_profiles():
     hosts= [
@@ -60,9 +62,9 @@ def test_run_profiles():
     delay=100
     rpm = RunProfileManager()
     rpm.AddBlankProfile()
-    
+
     rpm.run_profiles[0].name = "64GPUs"
-    
+
     rpm.run_profiles[0].manager_command = manager_command
     rpm.run_profiles[0].RemoveAll()
     for host in hosts:
@@ -70,7 +72,7 @@ def test_run_profiles():
             pass
             rpm.run_profiles[0].AddCommand(f'ssh -f {host} "unset CUDA_VISIBLE_DEVICES && export CUDA_VISIBLE_DEVICES={igpu} && {program_command}"',1,num_threads,False,0,delay)
 
-    
+
     assert rpm.run_profiles[0].name == "64GPUs"
     assert rpm.run_profiles[0].manager_command == "/software/CISTEM/$command"
     assert len(rpm.run_profiles[0].run_commands) == 24

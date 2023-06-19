@@ -201,7 +201,7 @@ async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_thre
 
     # Starting workers
     cmd = str(Path(config["CISTEM_PATH"]) / executable)
-    cmd += f' {HOST} {port_manager} {identity} {num_threads}'
+    cmd += f" {HOST} {port_manager} {identity} {num_threads}"
 
     # Test if cmd_prefix is iterable
     if type(num_procs) == int and type(cmd_prefix) == str:
@@ -210,7 +210,7 @@ async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_thre
     if type(num_procs) == int and type(cmd_suffix) == str:
         cmd_suffix = [cmd_suffix for i in range(num_procs)]
 
-    
+
 
     launch_futures = []
     if type(num_procs) == int:

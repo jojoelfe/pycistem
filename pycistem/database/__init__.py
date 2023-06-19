@@ -1,11 +1,33 @@
 import contextlib
 import sqlite3
-from selectors import EpollSelector
 from pathlib import Path
+from selectors import EpollSelector
+from ..core import Project
 
+import mrcfile
 import pandas as pd
 import starfile
-import mrcfile
+
+def create_project(
+        project_name: str,
+        output_dir: Path):
+    Path(output_dir, project_name).mkdir(parents=True, exist_ok=True)
+    project = Project()
+    success = project.CreateNewProject(
+        Path(output_dir, project_name, f"{project_name}.db").as_posix(),
+        Path(output_dir, project_name).as_posix(),
+        project_name,
+    )
+    
+def import_movies(project_path: Union[str, Path], movies: Union[str, Path, List[Union[str, Path]]]):
+    project = Project()
+    project.Open(project_path)
+    if isinstance(movies, str) or isinstance(movies, Path):
+        movies = [movies]
+    for movie in movies:
+        project.ImportMovie(movie)
+    project.Close()
+
 
 
 def get_image_info_from_db(project,image_asset=None, get_ctf=True):
@@ -47,7 +69,7 @@ def get_tm_info_from_db(project,image_asset,tm_id=None):
             return(df1.iloc[0])
         else:
             return(None)
-        
+
 
 
 def ensure_template_is_a_volume_asset(project: str, template_filename: str, pixel_size: float) -> int:
@@ -71,7 +93,7 @@ def ensure_template_is_a_volume_asset(project: str, template_filename: str, pixe
             con.execute(f"INSERT INTO VOLUME_ASSETS (VOLUME_ASSET_ID,NAME,FILENAME,PIXEL_SIZE,X_SIZE,Y_SIZE,Z_SIZE) VALUES ('{vol_id}','{Path(template_filename).stem}','{template_filename}','{pixel_size}','{x_size}','{y_size}','{z_size}')")
             con.commit()
             return(vol_id)
-       
+
 
 def write_match_template_to_starfile(project, filename,overwrite=True, switch_phi_psi=False):
 

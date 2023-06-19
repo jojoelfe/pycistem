@@ -1,21 +1,20 @@
 import asyncio
+import sqlite3
 import struct
 from dataclasses import dataclass
 from functools import partial
-from typing import List, Union, Tuple
-import sqlite3
+from pathlib import Path
+from typing import List, Tuple, Union
 
 import mrcfile
 import numpy as np
 import pandas as pd
 from skimage.feature import peak_local_max
-from pathlib import Path
-
 
 from pycistem.core import EulerSearch, ParameterMap
+from pycistem.database import datetime_to_msdos, ensure_template_is_a_volume_asset, get_image_info_from_db
 from pycistem.programs import cistem_program
 from pycistem.programs._cistem_constants import socket_job_result_queue, socket_program_defined_result
-from pycistem.database import datetime_to_msdos, get_image_info_from_db, ensure_template_is_a_volume_asset
 
 
 @dataclass
@@ -92,14 +91,14 @@ def parameters_from_database(database, template_filename: str, template_id: int,
     ) for i,image in image_info.iterrows()]
     return((par, image_info))
 
-def write_results_to_database(database,  parameters: List[MatchTemplateParameters], results: Tuple[int, pd.DataFrame], image_info):
+def write_results_to_database(database,  parameters: list[MatchTemplateParameters], results: tuple[int, pd.DataFrame], image_info):
     # Ensure Volume assets
     template_vol_ids = {}
     for par in parameters:
         template_vol_ids[par.input_reconstruction_filename] = -1
     for template in template_vol_ids:
         template_vol_ids[template] = ensure_template_is_a_volume_asset(database, template)
-    
+
     conn = sqlite3.connect(database, isolation_level=None)
     cur = conn.cursor()
     results = sorted(results, key=lambda x: x["parameter_index"])
@@ -115,7 +114,7 @@ def write_results_to_database(database,  parameters: List[MatchTemplateParameter
         template_match_job_id = 1
     else:
         template_match_job_id += 1
-    
+
     for result in results:
         template_match_result_list.append({
             "TEMPLATE_MATCH_ID": template_match_id,
@@ -160,15 +159,15 @@ def write_results_to_database(database,  parameters: List[MatchTemplateParameter
             "PHI_OUTPUT_FILE": "/dev/null",
             "DEFOCUS_OUTPUT_FILE": "/dev/null",
             "PIXEL_SIZE_OUTPUT_FILE": "/dev/null",
-            "HISTOGRAM_OUTPUT_FILE": parameters[result[0]].output_histogram_file,   
+            "HISTOGRAM_OUTPUT_FILE": parameters[result[0]].output_histogram_file,
             "PROJECTION_RESULT_OUTPUT_FILE": parameters[result[0]].scaled_mip_output_file,
         })
 
     # Create TEMPLATE_MATCH_PEAK_LIST_{i}
 
     # TEMPLATE_MATCH_PEAK_CHANGE_LIST_{i}
-    
-    
+
+
     ESTIMATED_CTF_PARAMETERS_LIST = []
 
     max_ctf_estimation_id= cur.execute("SELECT MAX(CTF_ESTIMATION_ID) FROM ESTIMATED_CTF_PARAMETERS").fetchone()[0]
@@ -264,7 +263,7 @@ async def handle_results(reader, writer, logger, parameters):
     num_pixels = int(struct.unpack("<f",results[8:12])[0])
     num_histogram_points = int(struct.unpack("<f",results[12:16])[0])
     num_ccs = struct.unpack("<f",results[16:20])[0]
-    sqrt_input_pixels = struct.unpack("<f",results[20:24])[0]
+    struct.unpack("<f",results[20:24])[0]
     mip = get_np_arrays(results,24,0,x_dim,y_dim,num_pixels)
     psi = get_np_arrays(results,24,1,x_dim,y_dim,num_pixels)
     theta = get_np_arrays(results,24,2,x_dim,y_dim,num_pixels)
@@ -278,7 +277,7 @@ async def handle_results(reader, writer, logger, parameters):
     sum_squares = np.sqrt(sum_squares/num_ccs - sum**2)
     scaled_mip = np.divide(mip - sum, sum_squares, out=np.zeros_like(mip), where=sum_squares!=0)
     par = parameters[result_number]
-    histogram = np.frombuffer(results,offset=24+8*num_pixels*4, count=num_histogram_points,dtype=np.float32).copy()
+    np.frombuffer(results,offset=24+8*num_pixels*4, count=num_histogram_points,dtype=np.float32).copy()
 
     # Calculate expected threshold
     from scipy.special import erfcinv
@@ -330,5 +329,5 @@ def run(parameters: Union[MatchTemplateParameters,list[MatchTemplateParameters]]
         par.last_search_position = global_euler_search.number_of_search_positions - 1
 
     results = asyncio.run(cistem_program.run("match_template", parameters, signal_handlers=signal_handlers,num_threads=parameters[0].max_threads,**kwargs))
-    
+
     return(results)

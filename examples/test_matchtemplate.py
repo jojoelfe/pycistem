@@ -2,8 +2,7 @@ import numpy as np
 from rich import print
 
 import pycistem
-from pycistem.programs import match_template
-from pycistem.programs import generate_gpu_prefix, generate_num_procs
+from pycistem.programs import generate_gpu_prefix, generate_num_procs, match_template
 
 pycistem.set_cistem_path("/groups/elferich/cistem_binaries/")
 

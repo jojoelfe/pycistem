@@ -78,7 +78,7 @@ def parameters_from_database(database, decolace=False, **kwargs):
     return((par, image_info))
 
 
-def write_results_to_database(database,  parameters: List[CtffindParameters], results, image_info):
+def write_results_to_database(database,  parameters: list[CtffindParameters], results, image_info):
     conn = sqlite3.connect(database, isolation_level=None)
     cur = conn.cursor()
     results = sorted(results, key=lambda x: x["parameter_index"])

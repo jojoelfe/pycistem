@@ -1,5 +1,6 @@
-from pycistem.core import Image, AnglesAndShifts, CTF
 import matplotlib.pyplot as plt
+
+from pycistem.core import CTF, AnglesAndShifts, Image
 
 box_size = 384
 pixel_size = 1.5

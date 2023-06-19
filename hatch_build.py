@@ -1,7 +1,7 @@
 import os
 import subprocess
-from typing import Any, Dict
 from pathlib import Path
+from typing import Any, Dict
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
@@ -37,7 +37,7 @@ class custom_build_ext(build_ext):
 
 
 
-def build(setup_kwargs: Dict[str, Any]) -> None:
+def build(setup_kwargs: dict[str, Any]) -> None:
     # CHeck if /opt/WX/intel-static/bin/wx-config exists
     # If it does, use it to build the extension
     # If it doesn't, use the system wx-config
@@ -83,7 +83,7 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
 
 class CustomBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
-        
+
         t = {"packages": ["pycistem"]}
         build(t)
         d = setup(**t,script_args=["build_ext"])
