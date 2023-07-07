@@ -11,7 +11,6 @@ from pathlib import Path
 from time import sleep
 
 import psutil
-from rich.logging import RichHandler
 
 
 def get_ip_addresses(family):
@@ -25,10 +24,8 @@ HOST = ",".join([a[1] for a in get_ip_addresses(socket.AF_INET)])
 
 from pycistem.config import config
 
-FORMAT = "%(message)s"
-logging.basicConfig(
-    level="ERROR", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
-)
+log = logging.getLogger(__name__)
+log.addHandler(logging.NullHandler())
 
 
 from pycistem.programs._cistem_constants import *
@@ -60,20 +57,19 @@ def _encode_parameters(parameters):
 
 async def handle_manager(reader, writer, identity, port):
     # Handles initial connection from the executable and directs them to the leader
-    logger = logging.getLogger("cisTEM Manager")
     addr = writer.get_extra_info("peername")
     #logger.info(f"{addr} connected to manager")
     writer.write(socket_please_identify)
     await writer.drain()
     data = await reader.readexactly(16)
     if data != socket_sending_identification:
-        logger.error(f"{addr!r} {data} is not {socket_sending_identification}")
+        log.error(f"{addr!r} {data} is not {socket_sending_identification}")
         writer.close()
         return
     data = await reader.readexactly(16)
     message= data.decode()
     if message != identity:
-        logger.error(f"{addr!r} {message} is not {identity}: wrong process connected")
+        log.error(f"{addr!r} {message} is not {identity}: wrong process connected")
         writer.close()
         return
     writer.write(socket_you_are_a_worker)
@@ -89,23 +85,23 @@ async def handle_manager(reader, writer, identity, port):
     writer.close()
 
 async def handle_leader(reader, writer, buffers, signal_handlers,results):
+    log_str = ""
     # Handles connections from the executable asking for work
 
-    logger = logging.getLogger("cisTEM Leader")
     addr = writer.get_extra_info("peername")
 
     writer.write(socket_you_are_connected)
     await writer.drain()
     data = await reader.readexactly(16)
     if data != socket_send_next_job:
-        logger.error(f"{addr!r} did not request next job, instead sent {data}")
+        log.error(f"{addr!r} did not request next job, instead sent {data}")
         writer.close()
         return
     data = await reader.readexactly(8)
     #logger.info(f"{addr} sent {data} as dummy result")
     while len(buffers) > 0:
         parameter_index, buffer = buffers.pop(0)
-        logger.info(f"Working on parameter set {parameter_index}")
+        log.debug(f"Working on parameter set {parameter_index}")
         writer.write(socket_ready_to_send_single_job)
         writer.write(len(buffer).to_bytes(8,"little"))
         writer.write(buffer)
@@ -120,24 +116,37 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
                 if data != socket_job_result_queue:
                     cont = False
                 else:
-                    result = await signal_handlers[data](reader,writer,logger)
+                    await signal_handlers[data](reader,writer,log)
+                    log_str += "J"
                     continue
                 if data in signal_handlers:
                     #logger.info(f"{addr} sent {data} and I know what to do with it")
-                    result = await signal_handlers[data](reader,writer,logger)
+                    result = await signal_handlers[data](reader,writer,log)
                     results.append((parameter_index,result))
+                    log_str += "R"
                 else:
-                    logger.error(f"{addr} sent {data} and I don't know what to do with it, really")
+                    log.error(f"{addr} sent {data} and I don't know what to do with it, really {log_str}")
+
                     #logger.error(f"{buffer}")
                     break
-        if socket_send_next_job not in signal_handlers:
-            data = await reader.readexactly(16)
-            if data != socket_send_next_job:
-                logger.error(f"{addr!r} did not request next job, instead sent {data}")
-                break
-            data = await reader.readexactly(8)
-            #logger.info(f"{addr} sent {data} after requesting next results")
-    logger.info(f"{addr} finished, sending time to die")
+        cont = True
+        while cont:
+            if socket_send_next_job not in signal_handlers:
+                data = await reader.readexactly(16)
+                if data != socket_send_next_job:
+                    if data == socket_job_result_queue:
+                        res = await signal_handlers[data](reader,writer,log)
+                        log_str += "j"
+                        continue
+                    else:
+                        log.error(f"{addr!r} did not request next job, instead sent {data}")
+                data = await reader.readexactly(8)
+                log_str += "N"
+                cont = False
+                #logger.info(f"{addr} sent {data} after requesting next results")
+            else:
+                cont = False
+    log.debug(f"{addr} finished, sending time to die")
     writer.write(socket_time_to_die)
     await writer.drain()
     data = await reader.read(16)
@@ -149,10 +158,9 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
     writer.close()
 
 
-async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_threads=1, cmd_prefix="", cmd_suffix=""):
+async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_threads=1, cmd_prefix="", cmd_suffix="", save_output=False, save_output_path="",sleep_time=0.1):
     results = []
     buffers = []
-    logger = logging.getLogger("cisTEM Program")
     # Set HOST to curretn ip address
     #'127.0.0.1'  # Standard loopback interface address (localhost)
 
@@ -160,7 +168,7 @@ async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_thre
     alphabet = string.ascii_letters + string.digits
     identity = "".join(secrets.choice(alphabet) for i in range(16))
     buffers = [(i,_encode_parameters(parameter)) for i, parameter in enumerate(parameters)]
-    logger.info(f"Secret is {identity}")
+    log.debug(f"Secret is {identity}")
 
     # Start the leader
     start_port = 3000
@@ -172,14 +180,14 @@ async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_thre
             leader_started = True
             start_port += 1
         except OSError:
-            logger.error(f"Port {start_port} already in use, trying next port")
+            log.debug(f"Port {start_port} already in use, trying next port")
             start_port += 1
             if start_port > 4000:
                 msg = "No ports available"
                 raise OSError(msg)
     port_leader = server_leader.sockets[0].getsockname()[1]
     addrs = ", ".join(str(sock.getsockname()) for sock in server_leader.sockets)
-    logger.info(f"Serving leader on {addrs}")
+    log.debug(f"Serving leader on {addrs}")
 
     # Start the manager
     manager_started = False
@@ -189,14 +197,14 @@ async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_thre
                 lambda r,w : handle_manager(r,w,identity,port_leader), "",start_port, family=socket.AF_INET)
             manager_started = True
         except OSError:
-            logger.error(f"Port {start_port} already in use, trying next port")
+            log.debug(f"Port {start_port} already in use, trying next port")
             start_port += 1
             if start_port > 4000:
                 msg = "No ports available"
                 raise OSError(msg)
     port_manager = server_manager.sockets[0].getsockname()[1]
     addrs = ", ".join(str(sock.getsockname()) for sock in server_manager.sockets)
-    logger.info(f"Serving manager on {addrs}")
+    log.debug(f"Serving manager on {addrs}")
 
 
     # Starting workers
@@ -215,7 +223,6 @@ async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_thre
     launch_futures = []
     if type(num_procs) == int:
         tasks = [cmd_prefix[i] + cmd +cmd_suffix[i] for i in range(num_procs)]
-        print(tasks)
     elif type(num_procs) == RunProfile:
         tasks = []
         num_procs.SubstituteExecutableName(executable)
@@ -228,9 +235,9 @@ async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_thre
         task,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE))
-        sleep(0.1)
+        sleep(sleep_time)
 
-    logging.info(f"Launched {num_procs} processes")
+    logging.debug(f"Launched {num_procs} processes")
 
     result_futures = [
             future.communicate()
@@ -241,6 +248,12 @@ async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_thre
     except Exception as ex:
         print("Caught error executing task", ex)
         raise
-    print("Results:", proc_results)
+    if save_output:
+        for i, result in enumerate(proc_results):
+            with open(save_output_path + f"_{i}.txt", "w") as f:
+                f.write(result[0].decode("utf-8"))
+            if len(result[1]) > 0:
+                with open(save_output_path + f"_{i}_error.txt", "w") as f:
+                    f.write(result[1].decode("utf-8"))
     return(results)
 

@@ -213,3 +213,42 @@ def run(parameters: Union[CtffindParameters,list[CtffindParameters]],**kwargs):
 
 
     return(result_ctf)
+
+async def run_async(parameters: Union[CtffindParameters,list[CtffindParameters]],**kwargs):
+
+    if not isinstance(parameters, list):
+        parameters = [parameters]
+
+    byte_results = await cistem_program.run("ctffind", parameters, signal_handlers=signal_handlers,**kwargs)
+    result_ctf = []
+
+    for parameter_index,byte_result in byte_results:
+        defocus1 = struct.unpack("<f",byte_result[0:4])[0]
+        defocus2 = struct.unpack("<f",byte_result[4:8])[0]
+        astigmatism_angle = struct.unpack("<f",byte_result[8:12])[0]
+        phase_shift = struct.unpack("<f",byte_result[12:16])[0]
+        score = struct.unpack("<f",byte_result[16:20])[0]
+        fit_resolution = struct.unpack("<f",byte_result[20:24])[0]
+        aliasing_resolution = struct.unpack("<f",byte_result[24:28])[0]
+        iciness = struct.unpack("<f",byte_result[28:32])[0]
+        tilt_angle = struct.unpack("<f",byte_result[32:36])[0]
+        tilt_axis = struct.unpack("<f",byte_result[36:40])[0]
+        sample_thickness = struct.unpack("<f",byte_result[40:44])[0]
+
+        result_ctf.append({
+            "parameter_index" : parameter_index,
+            "defocus1" : defocus1,
+            "defocus2" : defocus2,
+            "astigmatism_angle" : astigmatism_angle,
+            "phase_shift" : phase_shift,
+            "score" : score,
+            "fit_resolution" : fit_resolution,
+            "aliasing_resolution" : aliasing_resolution,
+            "iciness" : iciness,
+            "tilt_angle" : tilt_angle,
+            "tilt_axis" : tilt_axis,
+            "sample_thickness" : sample_thickness
+        })
+
+
+    return(result_ctf)

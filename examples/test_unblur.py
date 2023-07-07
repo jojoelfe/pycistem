@@ -26,10 +26,10 @@ par2 = unblur.UnblurParameters(
     exposure_per_frame=0.8)
 
 pars = unblur.parameters_from_database("/nrs/elferich/old_THP1_brequinar/20230407_THP1_C_glycerol_g2_aa26/20230407_THP1_C_glycerol_g2_aa26.db",decolace=True)
-pars = pars[20:70]
+pars = pars[20:29]
 #print(pars)
 
-res = unblur.run(pars,num_procs=20)
+res = unblur.run(pars,num_procs=10)
 
 print(res)
 #unblur.write_results_to_database('/nrs/elferich/THP1_brequinar/20230407_THP1_C_glycerol_g2_aa26/20230407_THP1_C_glycerol_g2_aa26.db',pars,res)

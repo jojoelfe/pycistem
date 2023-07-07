@@ -22,6 +22,7 @@ par2 = ctffind.CtffindParameters(
 )
 
 pars, image_info = ctffind.parameters_from_database("/nrs/elferich/old_THP1_brequinar/20230407_THP1_C_glycerol_g2_aa26/20230407_THP1_C_glycerol_g2_aa26.db")
+
 res = ctffind.run(pars,num_procs=10)
 
 ctffind.write_results_to_database("/nrs/elferich/old_THP1_brequinar/20230407_THP1_C_glycerol_g2_aa26/20230407_THP1_C_glycerol_g2_aa26.db",pars,res,image_info)

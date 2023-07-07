@@ -3,13 +3,14 @@ import sqlite3
 from pathlib import Path
 from selectors import EpollSelector
 from pycistem.core import Project
+from datetime import datetime
 
 import mrcfile
 import pandas as pd
 import starfile
 import mdocfile
 
-from typing import Union, List
+from typing import Union, List, Optional
 
 def create_project(
         project_name: str,
@@ -21,8 +22,9 @@ def create_project(
         Path(output_dir, project_name).as_posix(),
         project_name,
     )
+    return Path(output_dir, project_name, f"{project_name}.db")
     
-def import_movies(project_path: Union[str, Path], movies: Union[str, Path, List[Union[str, Path]]], pattern="*.tif", gain: Union[bool, str, Path] = True, import_metadata: bool = True):
+def import_movies(project_path: Union[str, Path], movies: Union[str, Path, List[Union[str, Path]]], pixelsize: float, exposure_dose: float, pattern="*.tif", gain: Union[bool, str, Path] = True, import_metadata: bool = True, bin_to_pixelsize: float = 1.0):
     if isinstance(project_path, Path):
         project_path = project_path.as_posix()
     project = Project()
@@ -43,7 +45,6 @@ def import_movies(project_path: Union[str, Path], movies: Union[str, Path, List[
     )
     if isinstance(gain, bool) and gain:
         gain_filenames = [list(Path(movie).parent.glob("*.dm4"))[0] for movie in movie_filenames]
-
     metadata_entries = []
     for i, movie in enumerate(movie_filenames):
         metadata = mdocfile.read(movie + ".mdoc")
@@ -74,10 +75,8 @@ def import_movies(project_path: Union[str, Path], movies: Union[str, Path, List[
             f" {metadata.loc[0,'ExposureDose']},"
             f" {datetime_to_msdos(datetime.strptime(metadata.loc[0,'DateTime'],'%d-%b-%Y %H:%M:%S'))});"
         )
-
     project.database.BeginMovieAssetInsert()
     for i, movie in enumerate(movie_filenames):
-
         project.database.AddNextMovieAsset(
             i + 1,
             Path(movie).name,
@@ -87,12 +86,12 @@ def import_movies(project_path: Union[str, Path], movies: Union[str, Path, List[
             8184,
             34,
             300,
-            0.53,
-            0.8,
+            pixelsize,
+            exposure_dose,
             2.7,
-            gain,
+            gain_filenames[i].as_posix(),
             "",
-            3.774,
+            bin_to_pixelsize / pixelsize,
             0,
             0,
             1.0,
@@ -242,3 +241,18 @@ def datetime_to_msdos(now):
     msdos_datetime = (msdos_date << 16) | msdos_time
 
     return msdos_datetime
+
+def create_peak_lists(con, id: int):
+    cur = con.cursor()
+    cur.execute(f"CREATE TABLE TEMPLATE_MATCH_PEAK_LIST_{id} (PEAK_NUMBER INTEGER PRIMARY KEY AUTOINCREMENT, X_POSITION REAL, Y_POSITION REAL, PSI REAL, THETA REAL, PHI REAL, DEFOCUS REAL, PIXEL_SIZE REAL, PEAK_HEIGHT REAL)")
+    con.commit()
+    cur.execute(f"CREATE TABLE TEMPLATE_MATCH_PEAK_CHANGE_LIST_{id} (PEAK_NUMBER INTEGER PRIMARY KEY AUTOINCREMENT, X_POSITION REAL, Y_POSITION REAL, PSI REAL, THETA REAL, PHI REAL, DEFOCUS REAL, PIXEL_SIZE REAL, PEAK_HEIGHT REAL, ORIGINAL_PEAK_NUMBER REAL, NEW_PEAK_NUMBER REAL)")
+    con.commit()
+
+def get_max_match_template_job_id(database):
+    with contextlib.closing(sqlite3.connect(database)) as con:
+        cur = con.cursor()
+        cur.execute("SELECT MAX(TEMPLATE_MATCH_JOB_ID) FROM TEMPLATE_MATCH_LIST")
+        max_match_template_job_id = cur.fetchone()[0]
+    return(max_match_template_job_id)
+
