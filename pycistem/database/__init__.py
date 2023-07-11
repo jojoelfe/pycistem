@@ -256,3 +256,21 @@ def get_max_match_template_job_id(database):
         max_match_template_job_id = cur.fetchone()[0]
     return(max_match_template_job_id)
 
+def get_already_processed_images(database, match_template_job_id):
+    with contextlib.closing(sqlite3.connect(database)) as con:
+        already_processed_images = pd.read_sql_query(f"SELECT IMAGE_ASSET_ID FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_JOB_ID = {match_template_job_id}",con)
+    return(already_processed_images)
+
+def get_num_images(database):
+    with contextlib.closing(sqlite3.connect(database)) as con:
+        cur = con.cursor()
+        cur.execute("SELECT COUNT(*) FROM IMAGE_ASSETS")
+        num_images = cur.fetchone()[0]
+    return(num_images)
+
+def get_num_movies(database):
+    with contextlib.closing(sqlite3.connect(database)) as con:
+        cur = con.cursor()
+        cur.execute("SELECT COUNT(*) FROM MOVIE_ASSETS")
+        num_movies = cur.fetchone()[0]
+    return(num_movies)

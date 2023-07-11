@@ -92,7 +92,10 @@ def parameters_from_database(database, template_filename: str, match_template_jo
         output_histogram_file=(ProjectDirectory / "Assets" / "TemplateMatching" / f"{Path(image['FILENAME']).stem}_auto_{match_template_job_id}_histogram.txt").as_posix(),
     ) for i,image in image_info.iterrows()]
     image_info["MATCH_TEMPLATE_JOB_ID"] = match_template_job_id
-    return((par, image_info))
+    image_info["PARAMETERS"] = par
+    image_info["DATABASE"] = database
+    image_info["THRESHOLD"] = 0.0
+    return(image_info)
 
 def write_results_to_database(database,  parameters: list[MatchTemplateParameters], results: list[tuple[int, pd.DataFrame]], image_info):
     # Ensure Volume assets
@@ -119,10 +122,10 @@ def write_results_to_database(database,  parameters: list[MatchTemplateParameter
     #    template_match_job_id += 1
 
     for result in results:
-        template_match_job_id = image_info.loc[result[0]]["MATCH_TEMPLATE_JOB_ID"]
+        template_match_job_id = image_info.iloc[result[0]]["MATCH_TEMPLATE_JOB_ID"]
         # CHeck if THRESHOLD column exists in image_info
         if "THRESHOLD" in image_info.columns:
-            threshold = image_info.loc[result[0]]["THRESHOLD"]
+            threshold = image_info.iloc[result[0]]["THRESHOLD"]
         else:
             threshold = 7.0
         template_match_result_list.append({
@@ -132,7 +135,7 @@ def write_results_to_database(database,  parameters: list[MatchTemplateParameter
             "TEMPLATE_MATCH_JOB_ID": template_match_job_id,
             "JOB_TYPE_CODE": 0,
             "INPUT_TEMPLATE_MATCH_ID": 0,
-            "IMAGE_ASSET_ID": image_info.loc[result[0]]["IMAGE_ASSET_ID"],
+            "IMAGE_ASSET_ID": image_info.iloc[result[0]]["IMAGE_ASSET_ID"],
             "REFERENCE_VOLUME_ASSET_ID": template_vol_ids[parameters[result[0]].input_reconstruction_filename],
             "IS_ACTIVE": 1,
             "USED_SYMMETRY": parameters[result[0]].my_symmetry,
@@ -258,8 +261,8 @@ async def handle_results(reader, writer, logger, parameters, write_directly_to_d
         "PEAK_HEIGHT": scaled_mip[tuple(peak_coordinates.T)]
     })
     if(write_directly_to_db):
-        image_info.loc[result_number,"THRESHOLD"] = expected_threshold
-        write_results_to_database(write_directly_to_db, parameters, [(result_number, result)], image_info)
+        image_info["THRESHOLD"].iat[result_number] = expected_threshold
+        write_results_to_database(image_info.iloc[result_number]["DATABASE"], parameters, [(result_number, result)], image_info)
         print("Wrote results to database")
     print(f"{par.input_search_images_filename}: {len(result)} peaks found. Median {result['PEAK_HEIGHT'].median()} Max {result['PEAK_HEIGHT'].max()} Threshold {expected_threshold}")
     return(result)
@@ -281,8 +284,11 @@ async def handle_job_result_queue(reader, writer, logger):
 
 
 
-def run(parameters: Union[MatchTemplateParameters,list[MatchTemplateParameters]],write_directly_to_db=False,image_info=None,**kwargs):
+def run(parameters: Union[MatchTemplateParameters,list[MatchTemplateParameters],pd.DataFrame],write_directly_to_db=False,image_info=None,**kwargs):
 
+    if isinstance(parameters, pd.DataFrame):
+        image_info = parameters
+        parameters = image_info["PARAMETERS"].tolist()
     if not isinstance(parameters, list):
         parameters = [parameters]
 

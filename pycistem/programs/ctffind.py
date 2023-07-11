@@ -149,10 +149,7 @@ def write_results_to_database(database,  parameters: list[CtffindParameters], re
 
     ESTIMATED_CTF_PARAMETERS_LIST = pd.DataFrame(ESTIMATED_CTF_PARAMETERS_LIST)
     ESTIMATED_CTF_PARAMETERS_LIST.to_sql("ESTIMATED_CTF_PARAMETERS", conn, if_exists="append", index=False)
-    print([
-        (row["CTF_ESTIMATION_ID"], row["IMAGE_ASSET_ID"])
-        for i, row in ESTIMATED_CTF_PARAMETERS_LIST.iterrows()
-    ])
+    
     cur = conn.cursor()
     cur.executemany("UPDATE IMAGE_ASSETS SET CTF_ESTIMATION_ID = ? WHERE IMAGE_ASSET_ID = ?",[
         (row["CTF_ESTIMATION_ID"], row["IMAGE_ASSET_ID"])
