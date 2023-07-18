@@ -100,7 +100,6 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
     data = await reader.readexactly(8)
     #logger.info(f"{addr} sent {data} as dummy result")
     while len(buffers) > 0:
-        print(f"Working on parameter set {len(buffers)}")
         parameter_index, buffer = buffers.pop(0)
         log.debug(f"Working on parameter set {parameter_index}")
         writer.write(socket_ready_to_send_single_job)

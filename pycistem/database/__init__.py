@@ -173,45 +173,49 @@ def ensure_template_is_a_volume_asset(project: str, template_filename: str, pixe
             return(vol_id)
 
 
-def write_match_template_to_starfile(project, filename,overwrite=True, switch_phi_psi=False):
+def insert_tmpackage_into_db(project, name, path):
+    with contextlib.closing(sqlite3.connect(project)) as con:
+        con.execute(f"INSERT INTO TEMPLATE_MATCHES_PACKAGE_ASSETS (NAME,STARFILE_FILENAME) VALUES ('{name}','{path}')")
+        con.commit()
+
+def write_match_template_to_starfile(project, match_template_job_id, filename,overwrite=True, switch_phi_psi=False):
 
     result_peaks = pd.DataFrame({
-        "image_filename": pd.Series(dtype="object"),
-        "template_filename": pd.Series(dtype="object"),
-        "energy": pd.Series(dtype="float"),
-        "Cs": pd.Series(dtype="float"),
-        "amplitude_contrast": pd.Series(dtype="float"),
-        "phase_shift": pd.Series(dtype="float"),
-        "defocus1": pd.Series(dtype="float"),
-        "defocus2": pd.Series(dtype="float"),
-        "defocus_angle": pd.Series(dtype="float"),
-        "peak_number": pd.Series(dtype="int"),
-        "x": pd.Series(dtype="float"),
-        "y": pd.Series(dtype="float"),
-        "psi": pd.Series(dtype="float"),
-        "theta": pd.Series(dtype="float"),
-        "phi": pd.Series(dtype="float"),
-        "defocus": pd.Series(dtype="float"),
-        "pixel_size": pd.Series(dtype="float"),
-        "peak_value": pd.Series(dtype="float")
+        "cisTEMOriginalImageFilename": pd.Series(dtype="object"),
+        "cisTEMReference3DFilename": pd.Series(dtype="object"),
+        "cisTEMMicroscopeVoltagekV": pd.Series(dtype="float"),
+        "cisTEMMicroscopeCsMM": pd.Series(dtype="float"),
+        "cisTEMAmplitudeContrast": pd.Series(dtype="float"),
+        "cisTEMPhaseShift": pd.Series(dtype="float"),
+        "cisTEMDefocus1": pd.Series(dtype="float"),
+        "cisTEMDefocus2": pd.Series(dtype="float"),
+        "cisTEMDefocusAngle": pd.Series(dtype="float"),
+        "cisTEMPositionInStack": pd.Series(dtype="int"),
+        "cisTEMOriginalXPosition": pd.Series(dtype="float"),
+        "cisTEMOriginalYPosition": pd.Series(dtype="float"),
+        "cisTEMAnglePsi": pd.Series(dtype="float"),
+        "cisTEMAngleTheta": pd.Series(dtype="float"),
+        "cisTEMAnglePhi": pd.Series(dtype="float"),
+        "cisTEMPixelSize": pd.Series(dtype="float"),
+        "cisTEMScore": pd.Series(dtype="float")
         })
 
     with contextlib.closing(sqlite3.connect(project)) as con:
-        df1 = pd.read_sql_query("SELECT * FROM TEMPLATE_MATCH_LIST",con)
+        df1 = pd.read_sql_query(f"SELECT * FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_JOB_ID={match_template_job_id}",con)
         for _i, tmres in df1.iterrows():
             image =  pd.read_sql_query(f"SELECT FILENAME FROM IMAGE_ASSETS WHERE IMAGE_ASSET_ID = {tmres['IMAGE_ASSET_ID']}",con)
             volume = pd.read_sql_query(f"SELECT FILENAME FROM VOLUME_ASSETS WHERE VOLUME_ASSET_ID = {tmres['REFERENCE_VOLUME_ASSET_ID']}",con)
             df2 = pd.read_sql_query(f"SELECT * FROM TEMPLATE_MATCH_PEAK_LIST_{tmres['TEMPLATE_MATCH_ID']}",con)
             for _j, peakres in df2.iterrows():
                 new_peak_series = pd.Series([
-                    image["FILENAME"].iloc[0],
-                    volume["FILENAME"].iloc[0],
+                    "'"+image["FILENAME"].iloc[0]+"'",
+                    "'"+volume["FILENAME"].iloc[0]+"'",
                     tmres["USED_VOLTAGE"],
                     tmres["USED_SPHERICAL_ABERRATION"],
                     tmres["USED_AMPLITUDE_CONTRAST"],
                     tmres["USED_PHASE_SHIFT"],
-                    tmres["USED_DEFOCUS1"],
-                    tmres["USED_DEFOCUS2"],
+                    tmres["USED_DEFOCUS1"] + peakres["DEFOCUS"],
+                    tmres["USED_DEFOCUS2"] + peakres["DEFOCUS"],
                     tmres["USED_DEFOCUS_ANGLE"],
                     peakres["PEAK_NUMBER"],
                     peakres["X_POSITION"],
@@ -219,8 +223,7 @@ def write_match_template_to_starfile(project, filename,overwrite=True, switch_ph
                     peakres["PSI"],
                     peakres["THETA"],
                     peakres["PHI"],
-                    peakres["DEFOCUS"],
-                    peakres["PIXEL_SIZE"],
+                    tmres["USED_PIXEL_SIZE"],
                     peakres["PEAK_HEIGHT"]
                     ], index = result_peaks.columns)
                 result_peaks.loc[len(result_peaks.index)] = new_peak_series
@@ -260,6 +263,13 @@ def get_already_processed_images(database, match_template_job_id):
     with contextlib.closing(sqlite3.connect(database)) as con:
         already_processed_images = pd.read_sql_query(f"SELECT IMAGE_ASSET_ID FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_JOB_ID = {match_template_job_id}",con)
     return(already_processed_images)
+
+def get_num_already_processed_images(database, match_template_job_id):
+    with contextlib.closing(sqlite3.connect(database)) as con:
+        cur = con.cursor()
+        cur.execute(f"SELECT COUNT(*) FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_JOB_ID = {match_template_job_id}")
+        num_already_processed_images = cur.fetchone()[0]
+    return(num_already_processed_images)
 
 def get_num_images(database):
     with contextlib.closing(sqlite3.connect(database)) as con:
