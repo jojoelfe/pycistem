@@ -83,7 +83,7 @@ def parameters_from_database(database, decolace=False, **kwargs):
     ) for i,movie in movie_info.iterrows()]
     return(par)
 
-def write_results_to_database(database,  parameters, results):
+def write_results_to_database(database,  parameters, results, change_image_assets=True):
     conn = sqlite3.connect(database)
     cur = conn.cursor()
     results = sorted(results, key=lambda x: x["parameter_index"])
@@ -151,9 +151,9 @@ def write_results_to_database(database,  parameters, results):
         #else:
         #    image_asset_id = existing_image_asset[0]
 
-        
-        cur.execute("REPLACE INTO IMAGE_ASSETS (IMAGE_ASSET_ID, NAME, FILENAME, POSITION_IN_STACK, PARENT_MOVIE_ID, ALIGNMENT_ID, CTF_ESTIMATION_ID, X_SIZE, Y_SIZE, PIXEL_SIZE, VOLTAGE, SPHERICAL_ABERRATION, PROTEIN_IS_WHITE, ORIGINAL_X_SIZE, ORIGINAL_Y_SIZE, CROP_CENTER_X, CROP_CENTER_Y) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            (image_asset_id, movie_info[3], parameters[result["parameter_index"]].output_filename, 1,movie_info[2],max_alignment_id+1, -1, int(xsize), int(ysize), actual_pixel_size, parameters[result["parameter_index"]].acceleration_voltage, movie_info[5], movie_info[4],result["orig_x"],result["orig_y"],result["crop_x"],result["crop_y"]))
+        if change_image_assets:
+            cur.execute("REPLACE INTO IMAGE_ASSETS (IMAGE_ASSET_ID, NAME, FILENAME, POSITION_IN_STACK, PARENT_MOVIE_ID, ALIGNMENT_ID, CTF_ESTIMATION_ID, X_SIZE, Y_SIZE, PIXEL_SIZE, VOLTAGE, SPHERICAL_ABERRATION, PROTEIN_IS_WHITE, ORIGINAL_X_SIZE, ORIGINAL_Y_SIZE, CROP_CENTER_X, CROP_CENTER_Y) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (image_asset_id, movie_info[3], parameters[result["parameter_index"]].output_filename, 1,movie_info[2],max_alignment_id+1, -1, int(xsize), int(ysize), actual_pixel_size, parameters[result["parameter_index"]].acceleration_voltage, movie_info[5], movie_info[4],result["orig_x"],result["orig_y"],result["crop_x"],result["crop_y"]))
         MOVIE_ALIGNMENT_PARAMETERS = {
             "FRAME_NUMBER": range(1,len(result["x_shifts"])+1),
             "X_SHIFT": result["x_shifts"],

@@ -41,7 +41,7 @@ class MatchTemplateParameters:
     ctf_refinement: bool = False
     particle_radius_angstroms: float = 0.0
     phase_shift: float = 0.0
-    mip_output_file: str = "mip.mrc"
+    mip_output_file: str = "/dev/null"
     best_psi_output_file: str = "best_psi.mrc"
     best_theta_output_file: str = "best_theta.mrc"
     best_phi_output_file: str = "best_phi.mrc"
@@ -250,6 +250,8 @@ async def handle_results(reader, writer, logger, parameters, write_directly_to_d
             ]
             f.write(" ".join(str(x) for x in temp_double_array) + "\n")
     mrcfile.write(par.scaled_mip_output_file, scaled_mip.astype(np.float32), overwrite=True)
+    if par.mip_output_file != "/dev/null":
+        mrcfile.write(par.mip_output_file, mip.astype(np.float32), overwrite=True)
     peak_coordinates = peak_local_max(scaled_mip, min_distance=int(par.min_peak_radius), exclude_border=50, threshold_abs=expected_threshold)
     result = pd.DataFrame({
         "X_POSITION": peak_coordinates[:,1] * par.pixel_size,

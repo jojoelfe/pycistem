@@ -197,7 +197,7 @@ def write_match_template_to_starfile(project, match_template_job_id, filename,ov
         "cisTEMAngleTheta": pd.Series(dtype="float"),
         "cisTEMAnglePhi": pd.Series(dtype="float"),
         "cisTEMPixelSize": pd.Series(dtype="float"),
-        "cisTEMScore": pd.Series(dtype="float")
+        "cisTEMScore": pd.Series(dtype="float"),
         })
 
     with contextlib.closing(sqlite3.connect(project)) as con:
@@ -267,20 +267,33 @@ def get_already_processed_images(database, match_template_job_id):
 def get_num_already_processed_images(database, match_template_job_id):
     with contextlib.closing(sqlite3.connect(database)) as con:
         cur = con.cursor()
-        cur.execute(f"SELECT COUNT(*) FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_JOB_ID = {match_template_job_id}")
+        cur.execute(f"SELECT COUNT(1) FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_JOB_ID = {match_template_job_id}")
         num_already_processed_images = cur.fetchone()[0]
     return(num_already_processed_images)
+
+def get_num_matches(database, match_template_job_id):
+    with contextlib.closing(sqlite3.connect(database)) as con:
+        cur = con.cursor()
+        cur.execute(f"SELECT TEMPLATE_MATCH_ID FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_JOB_ID = {match_template_job_id}")
+        match_template_ids = cur.fetchall()
+        total = 0
+        for mti in match_template_ids:
+            cur.execute(f"SELECT MAX(RowId) FROM TEMPLATE_MATCH_PEAK_LIST_{mti[0]}")
+            num_matches = cur.fetchone()[0]
+            if num_matches is not None:
+                total += num_matches
+    return(total)
 
 def get_num_images(database):
     with contextlib.closing(sqlite3.connect(database)) as con:
         cur = con.cursor()
-        cur.execute("SELECT COUNT(*) FROM IMAGE_ASSETS")
+        cur.execute("SELECT COUNT(1) FROM IMAGE_ASSETS WHERE CTF_ESTIMATION_ID IS NOT -1")
         num_images = cur.fetchone()[0]
     return(num_images)
 
 def get_num_movies(database):
     with contextlib.closing(sqlite3.connect(database)) as con:
         cur = con.cursor()
-        cur.execute("SELECT COUNT(*) FROM MOVIE_ASSETS")
+        cur.execute("SELECT COUNT(1) FROM MOVIE_ASSETS")
         num_movies = cur.fetchone()[0]
     return(num_movies)

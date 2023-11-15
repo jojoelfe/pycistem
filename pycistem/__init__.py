@@ -1,4 +1,4 @@
-__version__ = "0.3.5"
+__version__ = "0.3.8"
 
 #from . import core
 from pycistem import database, programs
