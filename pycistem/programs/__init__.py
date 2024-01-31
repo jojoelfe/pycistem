@@ -6,3 +6,5 @@ from pycistem.programs.refine_template_dev import *
 from pycistem.programs.refine_ctf import *
 from pycistem.programs.estimate_beamtilt import *
 from pycistem.programs.run_profile import *
+from pycistem.programs.reconstruct3d import *
+from pycistem.programs.resample import *

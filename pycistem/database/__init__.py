@@ -231,9 +231,9 @@ def write_match_template_to_starfile(project, match_template_job_id, filename,ov
     # Due to a bug in cisTEM in earlier matches phi and psi are switched in the
     # database
     if(switch_phi_psi):
-        temp = result_peaks["phi"]
-        result_peaks["phi"] = result_peaks["psi"]
-        result_peaks["psi"] = temp
+        temp = result_peaks["cisTEMAnglePhi"]
+        result_peaks["cisTEMAnglePhi"] = result_peaks["cisTEMAnglePsi"]
+        result_peaks["cisTEMAnglePsi"] = temp
     starfile.write(result_peaks, filename=filename, overwrite=overwrite)
 
 

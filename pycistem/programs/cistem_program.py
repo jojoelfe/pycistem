@@ -112,8 +112,9 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
             cont = True
             while cont:
                 data = await reader.readexactly(16)
+                log.debug(f"In no sig {addr} sent {data}")
                 result = None
-                if data != socket_job_result_queue:
+                if data != socket_job_result_queue and data != socket_i_have_info:
                     cont = False
                 else:
                     await signal_handlers[data](reader,writer,log)
@@ -133,6 +134,7 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
         while cont:
             if socket_send_next_job not in signal_handlers:
                 data = await reader.readexactly(16)
+                log.debug(f"In cont {addr} sent {data}")
                 if data != socket_send_next_job:
                     if data == socket_job_result_queue:
                         res = await signal_handlers[data](reader,writer,log)

@@ -43,9 +43,9 @@ def parameters_from_database(database, image_asset_id, output_filename, **kwargs
                              **kwargs)
     return(par)
 
-def run(parameters: Union[ApplyCtfParameters,list[ApplyCtfParameters]]):
+def run(parameters: Union[ApplyCtfParameters,list[ApplyCtfParameters]],**kwargs):
     if not isinstance(parameters, list):
         parameters = [parameters]
 
 
-    asyncio.run(cistem_program.run("applyctf",parameters))
+    asyncio.run(cistem_program.run("applyctf",parameters,**kwargs))
