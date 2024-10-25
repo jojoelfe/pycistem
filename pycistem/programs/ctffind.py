@@ -56,6 +56,7 @@ class CtffindParameters:
     desired_number_of_threads: int = 1
     eer_frames_per_image: int = 0
     eer_super_res_factor: int = 1
+    filter_lowres_signal: bool = True
     fit_nodes: bool = False
     fit_nodes_1D_brute_force: bool = True
     fit_nodes_2D_refine: bool = True
@@ -73,7 +74,7 @@ def parameters_from_database(database, decolace=False, **kwargs):
         pixel_size_of_input_image = image["movie_pixel_size"],
         gain_filename=image["GAIN_FILENAME"],
         output_diagnostic_filename=(ProjectDirectory / "Assets" / "CTF" / f"{Path(image['FILENAME']).stem}_{image['MOVIE_ASSET_ID']}_auto.mrc").as_posix(),
-        fit_nodes=True
+        fit_nodes=decolace
     ) for i,image in image_info.iterrows()]
     return((par, image_info))
 
@@ -163,9 +164,11 @@ def write_results_to_database(database,  parameters: list[CtffindParameters], re
 async def handle_results(reader, writer, logger):
     #logger.info("Handling results")
     await reader.read(4)
-    length = await reader.read(4)
+    length = await reader.readexactly(4)
+    print(f"CTFFIND results length {length}")
     number_of_bytes = int.from_bytes(length, byteorder="little")
-    results = await reader.read(number_of_bytes*4)
+    results = await reader.readexactly(number_of_bytes*4)
+    print(f"CTFFIND results {results}")
     return(results)
 
 signal_handlers = {

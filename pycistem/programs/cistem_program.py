@@ -112,7 +112,7 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
             cont = True
             while cont:
                 data = await reader.readexactly(16)
-                log.debug(f"In no sig {addr} sent {data}")
+                # log.debug(f"In no sig {addr} sent {data}")
                 result = None
                 if data != socket_job_result_queue and data != socket_i_have_info:
                     cont = False
@@ -134,7 +134,7 @@ async def handle_leader(reader, writer, buffers, signal_handlers,results):
         while cont:
             if socket_send_next_job not in signal_handlers:
                 data = await reader.readexactly(16)
-                log.debug(f"In cont {addr} sent {data}")
+                # log.debug(f"In cont {addr} sent {data}")
                 if data != socket_send_next_job:
                     if data == socket_job_result_queue:
                         res = await signal_handlers[data](reader,writer,log)
@@ -237,26 +237,41 @@ async def run(executable: str,parameters,signal_handlers={},num_procs=1,num_thre
         launch_futures.append(await asyncio.create_subprocess_shell(
         task,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE))
+        stderr=asyncio.subprocess.STDOUT))
         sleep(sleep_time)
 
     logging.debug(f"Launched {num_procs} processes")
+
+
+    #if save_output:
+    #    while True:
+    #        for i, future in enumerate(launch_futures):
+    #            line = await future.stdout.readline()
+    #            if line:
+    #                print(f"Pro {i}:")
+    #                print(line)
+
 
     result_futures = [
             future.communicate()
             for future in launch_futures
         ]
+    
+
     try:
         proc_results = await asyncio.gather(*result_futures, return_exceptions=False)
     except Exception as ex:
         print("Caught error executing task", ex)
         raise
-    if save_output:
-        for i, result in enumerate(proc_results):
-            with open(save_output_path + f"_{i}.txt", "w") as f:
-                f.write(result[0].decode("utf-8"))
-            if len(result[1]) > 0:
-                with open(save_output_path + f"_{i}_error.txt", "w") as f:
-                    f.write(result[1].decode("utf-8"))
+    finally:
+        if save_output:
+            for i, result in enumerate(proc_results):
+                with open(save_output_path + f"_{i}.txt", "w") as f:
+                    f.write(result[0].decode("utf-8"))
+                if result[1] and len(result[1]) > 0:
+                    with open(save_output_path + f"_{i}_error.txt", "w") as f:
+                        f.write(result[1].decode("utf-8"))
+    server_leader.close()
+    server_manager.close()
     return(results)
 

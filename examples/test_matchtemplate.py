@@ -6,6 +6,7 @@ from pycistem.programs import generate_gpu_prefix, generate_num_procs, match_tem
 import logging
 from rich.logging import RichHandler
 from rich import print
+import starfile
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

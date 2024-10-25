@@ -50,15 +50,14 @@ class UnblurPatchParameters:
     number_of_frames_for_running_average: int = 1
     max_threads: int = 1
     save_aligned_frames: bool = False
-    aligned_frames_filename: str = "aligned_frames.mrc"
-    output_shift_text_file: str = "shifts.txt"
     eer_frames_per_image: int = 0
     eer_super_res_factor: int = 1
     outputpath: str = "/tmp"
     patchcorrection: bool = False
+    override_patchnum: bool = False
     patch_num_x: int = 6
     patch_num_y: int = 4
-    distortion_model: int = 2
+    distortion_model: int = 3
 
 def parameters_from_database(database, decolace=False, **kwargs):
     movie_info = get_movie_info_from_db(database)
@@ -72,12 +71,10 @@ def parameters_from_database(database, decolace=False, **kwargs):
         exposure_per_frame=movie["DOSE_PER_FRAME"],
         amplitude_spectrum_filename=(ProjectDirectory / "Assets" / "Images" / "Spectra" / f"{Path(movie['FILENAME']).stem}_{movie['MOVIE_ASSET_ID']}_auto.mrc").as_posix(),
         small_sum_image_filename=(ProjectDirectory / "Assets" / "Images" / "Scaled" / f"{Path(movie['FILENAME']).stem}_{movie['MOVIE_ASSET_ID']}_auto.mrc").as_posix(),
-        align_on_cropped_area=decolace,
-        replace_dark_areas_with_gaussian_noise=decolace
     ) for i,movie in movie_info.iterrows()]
     return(par)
 
-def write_results_to_database(database,  parameters, results):
+def write_results_to_database(database,  parameters, results,change_image_assets):
     conn = sqlite3.connect(database)
     cur = conn.cursor()
     results = sorted(results, key=lambda x: x["parameter_index"])
@@ -166,18 +163,19 @@ async def handle_results(reader, writer, logger):
     length = await reader.read(4)
     number_of_bytes = int.from_bytes(length, byteorder="little")
     results = await reader.read(number_of_bytes*4)
+    print(struct.unpack_from("<"+''.join(["f" for a in range(number_of_bytes)]),results))
     return(results)
 
 signal_handlers = {
     socket_send_next_job : handle_results
 }
 
-def run(parameters: Union[UnblurPatchParameters,list[UnblurPatchParameters]],**kwargs):
+def run(parameters: Union[UnblurPatchParameters,list[UnblurPatchParameters]], unblur_command: str="unblur", **kwargs):
 
     if not isinstance(parameters, list):
         parameters = [parameters]
 
-    byte_results = asyncio.run(cistem_program.run("unblur", parameters, signal_handlers=signal_handlers,**kwargs))
+    byte_results = asyncio.run(cistem_program.run(unblur_command, parameters, signal_handlers=signal_handlers,**kwargs))
     result_shifts = []
 
     for parameter_index,byte_result in byte_results:

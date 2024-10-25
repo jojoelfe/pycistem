@@ -10,7 +10,7 @@ import pandas as pd
 
 from pycistem.programs import cistem_program
 from pycistem.programs._cistem_constants import socket_send_next_job, socket_job_result_queue
-from pycistem.core import Image
+#from pycistem.core import Image
 
 @dataclass
 class EstimateBeamtiltParameters:

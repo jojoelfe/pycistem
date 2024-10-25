@@ -49,3 +49,11 @@ def run(parameters: Union[ApplyCtfParameters,list[ApplyCtfParameters]],**kwargs)
 
 
     asyncio.run(cistem_program.run("applyctf",parameters,**kwargs))
+
+async def run_async(parameters: Union[ApplyCtfParameters,list[ApplyCtfParameters]],**kwargs):
+    if not isinstance(parameters, list):
+        parameters = [parameters]
+
+
+    await cistem_program.run("applyctf",parameters,**kwargs)
+

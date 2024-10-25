@@ -15,7 +15,7 @@ import datetime
 from pycistem.core import EulerSearch, ParameterMap
 from pycistem.database import datetime_to_msdos, ensure_template_is_a_volume_asset, get_image_info_from_db, create_peak_lists, get_max_match_template_job_id
 from pycistem.programs import cistem_program
-from pycistem.programs._cistem_constants import socket_job_result_queue, socket_program_defined_result
+from pycistem.programs._cistem_constants import socket_job_result_queue, socket_program_defined_result, socket_i_have_info
 
 
 @dataclass
@@ -67,6 +67,11 @@ class MatchTemplateParameters:
 # 1. Write correct threshold into db
 # 2. Get correct border_exclude value
 # 3. Maybe do projection?
+async def handle_socket_i_have_info(reader, writer, logger):
+    data = await reader.readexactly(4)
+    length = int.from_bytes(data, byteorder="little")
+    data = await reader.readexactly(length)
+    print(f"Info: {data.decode('utf-8')}")
 
 def get_np_arrays(bytes,o,i,x,y,numpix):
     array = np.frombuffer(bytes,offset=o+i*numpix*4, count=numpix,dtype=np.float32).copy()
@@ -74,7 +79,7 @@ def get_np_arrays(bytes,o,i,x,y,numpix):
     array = array[:,:x]
     return array
 
-def parameters_from_database(database, template_filename: str, match_template_job_id: Optional[int] = None,**kwargs):
+def parameters_from_database(database, template_filename: str, match_template_job_id: Optional[int] = None,**kwargs) :
     image_info = get_image_info_from_db(database,get_ctf=True)
     if image_info is None:
         return []
@@ -201,23 +206,27 @@ async def handle_results(reader, writer, logger, parameters, write_directly_to_d
     x_dim = int(struct.unpack("<f",results[0:4])[0])
     y_dim = int(struct.unpack("<f",results[4:8])[0])
     num_pixels = int(struct.unpack("<f",results[8:12])[0])
-    num_histogram_points = int(struct.unpack("<f",results[12:16])[0])
-    num_ccs = struct.unpack("<f",results[16:20])[0]
+    num_histogram_points = int(struct.unpack("<f",results[16:20])[0])
+    print(f"Got number of histogram points: {num_histogram_points}, but replacing with hardcoded 512")
+    num_histogram_points = 512
+    num_ccs = struct.unpack("<f",results[12:16])[0]
     struct.unpack("<f",results[20:24])[0]
-    mip = get_np_arrays(results,24,0,x_dim,y_dim,num_pixels)
-    psi = get_np_arrays(results,24,1,x_dim,y_dim,num_pixels)
-    theta = get_np_arrays(results,24,2,x_dim,y_dim,num_pixels)
-    phi = get_np_arrays(results,24,3,x_dim,y_dim,num_pixels)
-    defocus = get_np_arrays(results,24,4,x_dim,y_dim,num_pixels)
-    get_np_arrays(results,24,5,x_dim,y_dim,num_pixels)
-    sum = get_np_arrays(results,24,6,x_dim,y_dim,num_pixels)
+    struct.unpack("<f",results[24:28])[0]
+    print(f"Result number: {result_number} Number of expected results: {number_of_expected_results} Number of pixels: {num_pixels} X dim: {x_dim} Y dim: {y_dim} Num histogram points: {num_histogram_points} Num ccs: {num_ccs} Num float {number_of_floats}")
+    mip = get_np_arrays(results,28,0,x_dim,y_dim,num_pixels)
+    psi = get_np_arrays(results,28,1,x_dim,y_dim,num_pixels)
+    theta = get_np_arrays(results,28,2,x_dim,y_dim,num_pixels)
+    phi = get_np_arrays(results,28,3,x_dim,y_dim,num_pixels)
+    defocus = get_np_arrays(results,28,4,x_dim,y_dim,num_pixels)
+    get_np_arrays(results,28,5,x_dim,y_dim,num_pixels)
+    sum = get_np_arrays(results,28,6,x_dim,y_dim,num_pixels)
 
     sum = sum / num_ccs
-    sum_squares = get_np_arrays(results,24,7,x_dim,y_dim,num_pixels)
+    sum_squares = get_np_arrays(results,28,7,x_dim,y_dim,num_pixels)
     sum_squares = np.sqrt(sum_squares/num_ccs - sum**2)
     scaled_mip = np.divide(mip - sum, sum_squares, out=np.zeros_like(mip), where=sum_squares!=0)
     par = parameters[result_number]
-    histogram = np.frombuffer(results,offset=24+8*num_pixels*4, count=num_histogram_points,dtype=np.int64).copy()
+    histogram = np.frombuffer(results,offset=28+8*num_pixels*4, count=num_histogram_points,dtype=np.int64).copy()
     survival_histogram = np.zeros(num_histogram_points, dtype=np.float32)
     survival_histogram[-1] = histogram[-1]
     for line_counter in range(num_histogram_points - 2, -1, -1):
@@ -296,7 +305,8 @@ def run(parameters: Union[MatchTemplateParameters,list[MatchTemplateParameters],
 
     signal_handlers = {
         socket_program_defined_result : partial(handle_results, parameters = parameters, write_directly_to_db=write_directly_to_db,image_info=image_info),
-        socket_job_result_queue : handle_job_result_queue
+        socket_job_result_queue : handle_job_result_queue,
+        socket_i_have_info: handle_socket_i_have_info,
     }
     for i, par in enumerate(parameters):
         par.image_number_for_gui = i
@@ -310,6 +320,6 @@ def run(parameters: Union[MatchTemplateParameters,list[MatchTemplateParameters],
         par.first_search_position = 0
         par.last_search_position = global_euler_search.number_of_search_positions - 1
 
-    results = asyncio.run(cistem_program.run("match_template", parameters, signal_handlers=signal_handlers,num_threads=parameters[0].max_threads,**kwargs))
+    results = asyncio.run(cistem_program.run("match_template_gpu", parameters, signal_handlers=signal_handlers,num_threads=parameters[0].max_threads,**kwargs))
 
     return(results)

@@ -9,7 +9,7 @@ from functools import partial
 
 from pycistem.programs import cistem_program
 from pycistem.programs._cistem_constants import socket_program_defined_result, socket_job_result_queue, socket_i_have_an_error
-from pycistem.core import Image
+#from pycistem.core import Image
 
 @dataclass
 class RefineCtfParameters:

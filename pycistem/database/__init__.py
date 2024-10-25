@@ -2,7 +2,7 @@ import contextlib
 import sqlite3
 from pathlib import Path
 from selectors import EpollSelector
-from pycistem.core import Project
+#from pycistem.core import Project
 from datetime import datetime
 
 import mrcfile
@@ -15,6 +15,7 @@ from typing import Union, List, Optional
 def create_project(
         project_name: str,
         output_dir: Path):
+    from pycistem.core import Project
     Path(output_dir, project_name).mkdir(parents=True, exist_ok=True)
     project = Project()
     success = project.CreateNewProject(
@@ -25,6 +26,7 @@ def create_project(
     return Path(output_dir, project_name, f"{project_name}.db")
     
 def import_movies(project_path: Union[str, Path], movies: Union[str, Path, List[Union[str, Path]]], pixelsize: float, exposure_dose: float, pattern="*.tif", gain: Union[bool, str, Path] = True, import_metadata: bool = True, bin_to_pixelsize: float = 1.0):
+    from pycistem.core import Project
     if isinstance(project_path, Path):
         project_path = project_path.as_posix()
     project = Project()

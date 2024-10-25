@@ -24,3 +24,12 @@ def run(parameters: Union[RefineTemplateDevParameters,list[RefineTemplateDevPara
     results = asyncio.run(cistem_program.run("refine_template_dev", parameters, signal_handlers=signal_handlers,num_threads=parameters[0].num_threads,**kwargs))
 
     return(results)
+
+async def run_async(parameters: Union[RefineTemplateDevParameters,list[RefineTemplateDevParameters]],**kwargs):
+
+    if not isinstance(parameters, list):
+        parameters = [parameters]
+
+    result = await cistem_program.run("refine_template_dev", parameters,num_threads=parameters[0].num_threads,**kwargs)
+
+    return(result)

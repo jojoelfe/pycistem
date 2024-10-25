@@ -14,6 +14,7 @@ from setuptools.command.build_ext import build_ext
 # Overwrite default compiler flags. It's kind of a hack to add the import flgs to the compiler string, but I think its the only way.
 class custom_build_ext(build_ext):
     def build_extensions(self):
+        print("Building extensions")
         # Override the compiler executables. Importantly, this
         # removes the "default" compiler flags that would
         # otherwise get passed on to to the compiler, i.e.,
@@ -68,7 +69,7 @@ def build(setup_kwargs: dict[str, Any]) -> None:
              ],
             # Example: passing in the version to the compiled code
             define_macros = [("VERSION_INFO", __version__)],
-            include_dirs=["cisTEM/src/"],
+            include_dirs=["cisTEM/src/","cisTEM/build/gcc"],
             extra_objects = [ "cisTEM/build/gcc/src/libcore.a"],
             extra_link_args = link_args,
             ),
@@ -83,7 +84,9 @@ def build(setup_kwargs: dict[str, Any]) -> None:
 
 class CustomBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
-
+        print(version)
+        if version == "editable":
+            return
         t = {"packages": ["pycistem"]}
         build(t)
         d = setup(**t,script_args=["build_ext"])
