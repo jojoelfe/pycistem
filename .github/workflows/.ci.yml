@@ -41,6 +41,7 @@ jobs:
       run: |
         cd cisTEM
         ./regenerate_project.b
+        . /opt/intel/oneapi/setvars.sh && export PATH=/usr/bin:$PATH
         mkdir -p build/gcc
         cd build/gcc
         CC=gcc CXX=g++ CPPFLAGS=-fPIC CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --enable-staticmode --enable-samples --enable-experimental --enable-openmp --with-wx-config=wx-config
