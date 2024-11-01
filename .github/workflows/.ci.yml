@@ -91,6 +91,7 @@ jobs:
       run: pyenv local ${{ matrix.python }} && pip install hatch
     - name: Build project
       run: |
+        . /opt/intel/oneapi/setvars.sh && export PATH=/usr/bin:$PATH
         pyenv local ${{ matrix.python }} && hatch build
     - name: Create artifact
       uses: actions/upload-artifact@v3
