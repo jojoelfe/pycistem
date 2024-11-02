@@ -22,7 +22,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["appdirs","PyYaml","pandas","rich","starfile","mrcfile","psutil","mdocfile"]
+dependencies = ["appdirs","PyYaml","pandas","rich","starfile","mrcfile","psutil","mdocfile","setuptools<70"]
 
 [project.urls]
 Documentation = "https://github.com/jojoelfe/pycistem#readme"
