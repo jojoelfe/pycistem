@@ -23,6 +23,7 @@ class custom_build_ext(build_ext):
         wx_config = "wx-config"
 
         wxflags = subprocess.run([wx_config, "--cxxflags"], stdout=subprocess.PIPE).stdout.decode("utf-8")
+        print(f"wxflags: {wxflags}")
         # Strip the newline from the wxflags
         wxflags = wxflags.strip()
 
