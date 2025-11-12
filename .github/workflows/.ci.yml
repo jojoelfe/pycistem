@@ -73,8 +73,8 @@ jobs:
         fetch-depth: 0
     - run: git -C cisTEM pull || git clone -b je_tmpackage_into_combined https://github.com/timothygrant80/cisTEM.git
       name: Checkout cisTEM
-    - name: Install unzip
-      run: apt-get update && apt-get install unzip
+    - name: Install system dependencies
+      run: apt-get update && apt-get install -y unzip patchelf
     - name: Install pyenv
       uses: gabrielfalcao/pyenv-action@v11
     - name: Install python
