@@ -88,24 +88,29 @@ jobs:
         path: |
           cisTEM/build/gcc
     - name: Install Hatch
-      run: pyenv local ${{ matrix.python }} && pip install hatch
+      run: pyenv local ${{ matrix.python }} && pip install hatch auditwheel
     - name: Build project
       run: |
         . /opt/intel/oneapi/setvars.sh && export PATH=/usr/bin:/opt/WX/icc-static/bin/:$PATH
         pyenv local ${{ matrix.python }} && hatch build
+    - name: Repair wheels with auditwheel
+      run: |
+        pyenv local ${{ matrix.python }}
+        for wheel in dist/*.whl; do
+          auditwheel repair "$wheel" -w wheelhouse/
+        done
     - name: Create artifact
       uses: actions/upload-artifact@v4
       with:
         name: 'Wheel for Python ${{ matrix.python }}'
-        path: dist/pycistem*.whl
+        path: wheelhouse/pycistem*.whl
+  
     - name: Publish
       if: contains(github.ref, 'tags')
       env:
         HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
         HATCH_INDEX_USER: __token__
       run: |
-        pyenv local ${{ matrix.python }} && hatch publish dist/*.whl
-        
-
+        pyenv local ${{ matrix.python }} && hatch publish wheelhouse/*.whl
 
 
