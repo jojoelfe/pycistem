@@ -50,7 +50,7 @@ jobs:
         cd src
         make -j 2 libcore.a
     - name: Create artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: 'cisTEM artifact'
         path: |
@@ -96,7 +96,7 @@ jobs:
         . /opt/intel/oneapi/setvars.sh && export PATH=/usr/bin:/opt/WX/icc-static/bin/:$PATH
         pyenv local ${{ matrix.python }} && hatch build
     - name: Create artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: 'Wheel for Python ${{ matrix.python }}'
         path: dist/pycistem*.whl
