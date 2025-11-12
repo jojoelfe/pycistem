@@ -20,12 +20,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        set-safe-directory: '*'
       name: Checkout pycistem
-    - run: git -C cisTEM pull || git clone https://github.com/timothygrant80/cisTEM.git
+    - run: git -C cisTEM pull || git clone -b je_tmpackage_into_combined https://github.com/timothygrant80/cisTEM.git
       name: Checkout cisTEM
-    - run: git checkout je_tmpackage_into_combined
-      name: get decolace branch
     - name: Get cisTEM sha
       id: getsha
       run: |
