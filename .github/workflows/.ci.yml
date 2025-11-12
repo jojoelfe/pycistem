@@ -82,7 +82,7 @@ jobs:
         pyenv install -s ${{ matrix.python }}
         pyenv local ${{ matrix.python }} && pip install -U pip    
     - name: Copy cisTEM artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: cisTEM artifact
         path: |
