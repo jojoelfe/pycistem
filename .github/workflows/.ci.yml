@@ -74,7 +74,14 @@ jobs:
     - run: git -C cisTEM pull || git clone -b je_tmpackage_into_combined https://github.com/timothygrant80/cisTEM.git
       name: Checkout cisTEM
     - name: Install system dependencies
-      run: apt-get update && apt-get install -y unzip patchelf
+      run: apt-get update && apt-get install -y unzip wget
+    - name: Install newer patchelf
+      run: |
+        wget https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-x86_64.tar.gz
+        tar -xzf patchelf-0.18.0-x86_64.tar.gz
+        cp bin/patchelf /usr/local/bin/
+        chmod +x /usr/local/bin/patchelf
+        patchelf --version
     - name: Install pyenv
       uses: gabrielfalcao/pyenv-action@v11
     - name: Install python
