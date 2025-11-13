@@ -41,7 +41,6 @@ jobs:
       run: |
         cd cisTEM
         ./regenerate_project.b
-        . /opt/intel/oneapi/setvars.sh && export PATH=/usr/bin:$PATH
         mkdir -p build/gcc
         cd build/gcc
         CC=gcc CXX=g++ CPPFLAGS=-fPIC CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --disable-mkl --enable-staticmode --enable-samples --enable-experimental --enable-openmp --with-wx-config=wx-config
@@ -65,7 +64,7 @@ jobs:
 
     runs-on: ubuntu-22.04
     container: 
-      image: jojoelfe/cistem_ci_gcc
+      image: quay.io/pypa/manylinux_2_28_x86_64:latest
       options: --user root --rm
     steps:
     - uses: actions/checkout@v3
@@ -98,7 +97,6 @@ jobs:
       run: pyenv local ${{ matrix.python }} && pip install hatch auditwheel
     - name: Build project
       run: |
-        . /opt/intel/oneapi/setvars.sh && export PATH=/usr/bin:/opt/WX/icc-static/bin/:$PATH
         pyenv local ${{ matrix.python }} && hatch build
     - name: Repair wheels with auditwheel
       run: |
