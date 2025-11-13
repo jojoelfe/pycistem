@@ -14,7 +14,7 @@ jobs:
   compile_cistem:
     runs-on: ubuntu-22.04
     container: 
-      image: cistemdashorg/cistem_build_env:v2.1.3
+      image: jojoelfe/cistem_ci_icpc
       options: --user root --rm
     steps:
     - uses: actions/checkout@v3
@@ -65,7 +65,7 @@ jobs:
 
     runs-on: ubuntu-22.04
     container: 
-      image: cistemdashorg/cistem_build_env:v2.1.3
+      image: jojoelfe/cistem_ci_icpc
       options: --user root --rm
     steps:
     - uses: actions/checkout@v3
