@@ -56,6 +56,12 @@ jobs:
         CC=gcc CXX=g++ CPPFLAGS=-fPIC CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --disable-mkl --enable-staticmode --enable-samples --enable-experimental --enable-openmp --with-wx-config=wx-config
         cd src
         make -j 2 libcore.a
+    - name: Archive logs on failure
+        if: failure() # This step will only run if a previous step in this job failed
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: cisTEM/build/gcc
     - name: Create artifact
       uses: actions/upload-artifact@v4
       with:
