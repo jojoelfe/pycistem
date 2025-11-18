@@ -89,7 +89,7 @@ jobs:
     - run: git -C cisTEM pull || git clone -b je_tmpackage_into_combined https://github.com/timothygrant80/cisTEM.git
       name: Checkout cisTEM
     - name: Install system dependencies
-      run: apt-get update && apt-get install -y unzip wget
+      run: yum update -y && yum install -y unzip wget
     - name: Install newer patchelf
       run: |
         wget https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-x86_64.tar.gz
