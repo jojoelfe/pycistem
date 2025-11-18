@@ -124,6 +124,12 @@ jobs:
     - name: Build project
       run: |
         pyenv local ${{ matrix.python }} && hatch build
+    - name: Create artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: 'unfixed Wheel for Python ${{ matrix.python }}'
+        path: dist/*.whl
+  
     - name: Repair wheels with auditwheel
       run: |
         pyenv local ${{ matrix.python }}
