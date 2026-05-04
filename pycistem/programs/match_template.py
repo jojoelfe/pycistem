@@ -12,7 +12,6 @@ import pandas as pd
 from skimage.feature import peak_local_max
 import datetime
 
-from pycistem.core import EulerSearch, ParameterMap
 from pycistem.database import datetime_to_msdos, ensure_template_is_a_volume_asset, get_image_info_from_db, create_peak_lists, get_max_match_template_job_id
 from pycistem.programs import cistem_program
 from pycistem.programs._cistem_constants import socket_job_result_queue, socket_program_defined_result, socket_i_have_info
@@ -308,6 +307,7 @@ def run(parameters: Union[MatchTemplateParameters,list[MatchTemplateParameters],
         socket_job_result_queue : handle_job_result_queue,
         socket_i_have_info: handle_socket_i_have_info,
     }
+    from pycistem.core import EulerSearch, ParameterMap
     for i, par in enumerate(parameters):
         par.image_number_for_gui = i
         global_euler_search = EulerSearch()

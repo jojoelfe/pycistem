@@ -88,20 +88,26 @@ class CustomBuildHook(BuildHookInterface):
         print(version)
         if version == "editable":
             return
-        t = {"packages": ["pycistem"]}
-        build(t)
-        d = setup(**t,script_args=["build_ext"])
-        ext_path = d.get_command_obj("build_ext").get_ext_fullpath("pycistem.core.core")
-        int_path = d.get_command_obj("build_ext").get_ext_filename("pycistem.core.core")
-        # Create symlink from ext_path to int_path, overwrite if nescessary
         try:
-            os.remove(int_path)
-        except:
-            pass
-        os.symlink(Path(ext_path).absolute(),int_path)
-        build_data["pure_python"] = False
-        build_data["infer_tag"] = True
-        build_data["force_include"][ext_path] = int_path
+            t = {"packages": ["pycistem"]}
+            build(t)
+            d = setup(**t,script_args=["build_ext"])
+            ext_path = d.get_command_obj("build_ext").get_ext_fullpath("pycistem.core.core")
+            int_path = d.get_command_obj("build_ext").get_ext_filename("pycistem.core.core")
+            try:
+                os.remove(int_path)
+            except:
+                pass
+            os.symlink(Path(ext_path).absolute(),int_path)
+            build_data["pure_python"] = False
+            build_data["infer_tag"] = True
+            build_data["force_include"][ext_path] = int_path
+        except Exception as e:
+            print(
+                f"WARNING: pycistem.core C++ extension could not be built ({e}). "
+                "Installing without core support. "
+                "To build with core, ensure cisTEM, wxWidgets, and FFTW are installed."
+            )
 
 if __name__ == "__main__":
     t = {"packages": ["pycistem"]}
