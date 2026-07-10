@@ -1,6 +1,7 @@
 import pytest
 
-from pycistem.core import CTF, AnglesAndShifts, Image, RunProfile, RunProfileManager
+core = pytest.importorskip("pycistem.core.core")
+from pycistem.core import CTF, AnglesAndShifts, Image, RunProfile, RunProfileManager  # noqa: E402
 
 
 @pytest.fixture

@@ -1,5 +1,6 @@
 [build-system]
-requires = ["hatchling", "pybind11", "setuptools<60"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pycistem"
@@ -21,14 +22,12 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["appdirs","PyYaml","pandas","rich","starfile","mrcfile","psutil","mdocfile","setuptools<60"]
+dependencies = ["appdirs","PyYaml","pandas","rich","starfile","mrcfile","psutil","mdocfile"]
 
 [project.urls]
 Documentation = "https://github.com/jojoelfe/pycistem#readme"
 Issues = "https://github.com/jojoelfe/pycistem/issues"
 Source = "https://github.com/jojoelfe/pycistem"
-
-[tool.hatch.build.hooks.custom]
 
 [tool.hatch.build]
 dev-mode-exact = true

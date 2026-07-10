@@ -5,7 +5,7 @@ import pytest
 
 from pycistem.pycore import Project as PyProject
 
-core = pytest.importorskip("pycistem.core")
+core = pytest.importorskip("pycistem.core.core")
 from pycistem.core import Project as CoreProject  # noqa: E402
 
 

@@ -3,7 +3,7 @@ import pytest
 from pycistem.pycore import EulerSearch as PyEulerSearch
 from pycistem.pycore import ParameterMap as PyParameterMap
 
-core = pytest.importorskip("pycistem.core")
+core = pytest.importorskip("pycistem.core.core")
 from pycistem.core import EulerSearch as CoreEulerSearch  # noqa: E402
 from pycistem.core import ParameterMap as CoreParameterMap  # noqa: E402
 

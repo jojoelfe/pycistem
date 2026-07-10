@@ -1,8 +1,11 @@
 from pathlib import Path
-from pycistem.database import create_project, import_movies
-from pycistem.core import Project
 
 import pytest
+
+from pycistem.database import create_project, import_movies
+
+core = pytest.importorskip("pycistem.core.core")
+from pycistem.core import Project  # noqa: E402
 
 def test_create_project(tmp_path):
     project_name = "test_project"

@@ -4,7 +4,7 @@ from pycistem.pycore import RunCommand as PyRunCommand
 from pycistem.pycore import RunProfile as PyRunProfile
 from pycistem.pycore import RunProfileManager as PyRunProfileManager
 
-core = pytest.importorskip("pycistem.core")
+core = pytest.importorskip("pycistem.core.core")
 from pycistem.core import RunCommand as CoreRunCommand  # noqa: E402
 from pycistem.core import RunProfile as CoreRunProfile  # noqa: E402
 from pycistem.core import RunProfileManager as CoreRunProfileManager  # noqa: E402

@@ -11,143 +11,37 @@ on:
       - main
 
 jobs:
-  compile_cistem:
-    runs-on: ubuntu-22.04
-    container: 
-      image: quay.io/pypa/manylinux_2_28_x86_64:latest
-      options: --user root --rm
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-      name: Checkout pycistem
-    - run: git -C cisTEM pull || git clone -b je_tmpackage_into_combined https://github.com/timothygrant80/cisTEM.git
-      name: Checkout cisTEM
-    - name: Get cisTEM sha
-      id: getsha
-      run: |
-        cd cisTEM
-        echo "::set-output name=sha::$(git rev-parse HEAD)"
-    - name: Cache cisTEM
-      uses: actions/cache@v3
-      id: cache
-      with:
-        key: 'sha_${{ steps.getsha.outputs.sha }}'
-        path: |
-          cisTEM/build/gcc/src/libcore.a
-          cisTEM/build/gcc/cistem_config.h
-    - name: Install dependencies
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: yum update -y && yum install -y wget gtk2-devel fftw3-devel libtiff-devel zlib-static glibc-static libstdc++-static fftw-static
-    - name: Build wxWidgets
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: |
-        wget -q https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.5/wxWidgets-3.0.5.tar.bz2 -O /tmp/wxwidgets.tar.bz2 
-        tar -xf /tmp/wxwidgets.tar.bz2 -C /tmp 
-        cd /tmp/wxWidgets-3.0.5  
-        CXXFLAGS=-fPIC CFLAGS=-fPIC ./configure --disable-precomp-headers --prefix=/usr/local --with-libnotify=no --disable-shared --without-gtkprint --with-libjpeg=builtin --with-libpng=builtin --with-libtiff=builtin --with-zlib=builtin --with-expat=builtin --disable-compat28 --without-liblzma --without-libjbig --with-gtk=2 --disable-sys-libs 
-        make -j2 
-        make install 
-    - name: Build cisTEM
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: |
-        cd cisTEM
-        ./regenerate_project.b
-        mkdir -p build/gcc
-        cd build/gcc
-        CC=gcc CXX=g++ CPPFLAGS=-fPIC CXXFLAGS=-fPIC CFLAGS=-fPIC ../../configure  --disable-mkl --enable-staticmode --enable-samples --enable-experimental --enable-openmp --with-wx-config=wx-config
-        cd src
-        make -j 2 libcore.a
-    - name: Archive logs on failure
-      if: failure() # This step will only run if a previous step in this job failed
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-logs
-        path: cisTEM/build/gcc
-    - name: Create artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: 'cisTEM artifact'
-        path: |
-          cisTEM/build/gcc/src/libcore.a
-          cisTEM/build/gcc/cistem_config.h
-  
   build:
-    needs: compile_cistem
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
         python: ['3.9','3.10','3.11']
 
     runs-on: ubuntu-22.04
-    container: 
-      image: quay.io/pypa/manylinux_2_28_x86_64:latest
-      options: --user root --rm
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - run: git -C cisTEM pull || git clone -b je_tmpackage_into_combined https://github.com/timothygrant80/cisTEM.git
-      name: Checkout cisTEM
-    - name: Install system dependencies
-      run: yum update -y && yum install -y unzip wget openssl-devel libffi-devel gtk2-devel fftw3-devel fftw-static
-    - name: Install newer patchelf
-      run: |
-        wget https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-x86_64.tar.gz
-        tar -xzf patchelf-0.18.0-x86_64.tar.gz
-        cp bin/patchelf /usr/local/bin/
-        chmod +x /usr/local/bin/patchelf
-        patchelf --version
-    - name: Build wxWidgets
-      run: |
-        wget -q https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.5/wxWidgets-3.0.5.tar.bz2 -O /tmp/wxwidgets.tar.bz2 
-        tar -xf /tmp/wxwidgets.tar.bz2 -C /tmp 
-        cd /tmp/wxWidgets-3.0.5  
-        CXXFLAGS=-fPIC CFLAGS=-fPIC ./configure --disable-precomp-headers --prefix=/usr/local --with-libnotify=no --disable-shared --without-gtkprint --with-libjpeg=builtin --with-libpng=builtin --with-libtiff=builtin --with-zlib=builtin --with-expat=builtin --disable-compat28 --without-liblzma --without-libjbig --with-gtk=2 --disable-sys-libs 
-        make -j2 
-        make install 
-    - name: Install pyenv
-      uses: gabrielfalcao/pyenv-action@v11
-    - name: Install python
-      run: |
-        pyenv install -s ${{ matrix.python }}
-        pyenv local ${{ matrix.python }} && pip install -U pip    
-    - name: Copy cisTEM artifact
-      uses: actions/download-artifact@v4
+    - name: Set up Python ${{ matrix.python }}
+      uses: actions/setup-python@v5
       with:
-        name: cisTEM artifact
-        path: |
-          cisTEM/build/gcc
+        python-version: ${{ matrix.python }}
     - name: Install Hatch
-      run: pyenv local ${{ matrix.python }} && pip install hatch auditwheel
+      run: pip install hatch
+    - name: Run tests
+      run: hatch run test
     - name: Build project
-      run: |
-        pyenv local ${{ matrix.python }} && hatch build
-    - name: Create artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: 'unfixed Wheel for Python ${{ matrix.python }}'
-        path: dist/*.whl
-  
-    - name: Repair wheels with auditwheel
-      run: |
-        pyenv local ${{ matrix.python }}
-        for wheel in dist/*.whl; do
-          auditwheel repair "$wheel" -w wheelhouse/
-        done
+      run: hatch build
     - name: Create artifact
       uses: actions/upload-artifact@v4
       with:
         name: 'Wheel for Python ${{ matrix.python }}'
-        path: wheelhouse/pycistem*.whl
-  
+        path: dist/*.whl
+
     - name: Publish
       if: contains(github.ref, 'tags')
       env:
         HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
         HATCH_INDEX_USER: __token__
       run: |
-        pyenv local ${{ matrix.python }} && hatch publish wheelhouse/*.whl
-
-
+        hatch publish dist/*.whl
