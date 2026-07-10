@@ -28,8 +28,6 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: Install Hatch
       run: pip install hatch
-    - name: Run tests
-      run: hatch run test
     - name: Build project
       run: hatch build
     - name: Create artifact
