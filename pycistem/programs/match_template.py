@@ -93,6 +93,7 @@ def parameters_from_database(database, template_filename: str, match_template_jo
         defocus2=image["DEFOCUS2"],
         defocus_angle=image["DEFOCUS_ANGLE"],
         scaled_mip_output_file=(ProjectDirectory / "Assets" / "TemplateMatching" / f"{Path(image['FILENAME']).stem}_auto_{match_template_job_id}_scaled_mip.mrc").as_posix(),
+        mip_output_file=(ProjectDirectory / "Assets" / "TemplateMatching" / f"{Path(image['FILENAME']).stem}_auto_{match_template_job_id}_mip.mrc").as_posix(),
         output_histogram_file=(ProjectDirectory / "Assets" / "TemplateMatching" / f"{Path(image['FILENAME']).stem}_auto_{match_template_job_id}_histogram.txt").as_posix(),
     ) for i,image in image_info.iterrows()]
     image_info["MATCH_TEMPLATE_JOB_ID"] = match_template_job_id
@@ -166,7 +167,7 @@ def write_results_to_database(database,  parameters: list[MatchTemplateParameter
             "MIN_PEAK_RADIUS": parameters[result[0]].min_peak_radius,
             "XY_CHANGE_THRESHOLD": 0.0,
             "EXCLUDE_ABOVE_XY_THRESHOLD": False,
-            "MIP_OUTPUT_FILE": "/dev/null",
+            "MIP_OUTPUT_FILE": parameters[result[0]].mip_output_file,
             "SCALED_MIP_OUTPUT_FILE": parameters[result[0]].scaled_mip_output_file,
             "AVG_OUTPUT_FILE": "/dev/null",
             "STD_OUTPUT_FILE": "/dev/null",

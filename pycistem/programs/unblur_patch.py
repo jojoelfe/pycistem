@@ -147,7 +147,7 @@ def write_results_to_database(database,  parameters, results,change_image_assets
         }
         conn.commit()
         MOVIE_ALIGNMENT_PARAMETERS = pd.DataFrame(MOVIE_ALIGNMENT_PARAMETERS)
-        MOVIE_ALIGNMENT_PARAMETERS.to_sql(f"MOVIE_ALIGNMENT_PARAMETERS_{max_alignment_id+1}", conn, if_exists="fail", index=False)
+        MOVIE_ALIGNMENT_PARAMETERS.to_sql(f"MOVIE_ALIGNMENT_PARAMETERS_{max_alignment_id+1}", conn, if_exists="replace", index=False)
         max_alignment_id += 1
     MOVIE_ALIGNMENT_LIST = pd.DataFrame(MOVIE_ALIGNMENT_LIST)
     MOVIE_ALIGNMENT_LIST.to_sql("MOVIE_ALIGNMENT_LIST", conn, if_exists="append", index=False)
@@ -200,5 +200,36 @@ def run(parameters: Union[UnblurPatchParameters,list[UnblurPatchParameters]], un
             "crop_y": crop_y
         })
 
+
+    return(result_shifts)
+
+async def run_async(parameters: Union[UnblurPatchParameters,list[UnblurPatchParameters]], unblur_command: str="unblur", **kwargs):
+
+    if not isinstance(parameters, list):
+        parameters = [parameters]
+    byte_results = await cistem_program.run(unblur_command, parameters, signal_handlers=signal_handlers,**kwargs)
+    result_shifts = []
+
+    for parameter_index,byte_result in byte_results:
+        number_of_images = int(((len(byte_result) /4 ) ) /2)
+        x_shifts = []
+        for offset in range(number_of_images):
+            x_shifts.append(struct.unpack_from("<f",byte_result,offset=offset*4)[0])
+        y_shifts = []
+        for offset in range(number_of_images):
+            y_shifts.append(struct.unpack_from("<f",byte_result,offset=offset*4+number_of_images*4)[0])
+        #orig_x = int(struct.unpack_from("<f",byte_result,offset=2*4*number_of_images)[0])
+        #orig_y = int(struct.unpack_from("<f",byte_result,offset=2*4*number_of_images+4)[0])
+        #crop_x = int(struct.unpack_from("<f",byte_result,offset=2*4*number_of_images+8)[0])
+        #crop_y = int(struct.unpack_from("<f",byte_result,offset=2*4*number_of_images+12)[0])
+        result_shifts.append({
+            "parameter_index": parameter_index,
+            "x_shifts": x_shifts,
+            "y_shifts": y_shifts,
+            "orig_x": 0,
+            "orig_y": 0,
+            "crop_x": 0,
+            "crop_y": 0
+        })
 
     return(result_shifts)
